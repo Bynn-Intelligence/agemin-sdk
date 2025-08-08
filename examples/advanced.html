@@ -257,7 +257,6 @@
         <label for="mode">Verification Mode</label>
         <select id="mode">
           <option value="modal">Modal (iframe)</option>
-          <option value="popup">Popup Window</option>
           <option value="redirect">Redirect</option>
         </select>
       </div>
@@ -401,12 +400,32 @@
           mode: mode,
           metadata: metadata,
           onSuccess: (data) => {
-            addLog(`Verification successful: ${JSON.stringify(data)}`, 'success');
-            showStatus('Verification successful!', 'success');
+            addLog(`✅ SUCCESS - Visitor meets age requirement: ${JSON.stringify(data)}`, 'success');
+            showStatus('Age verified! Visitor meets requirement', 'success');
+          },
+          onFail: (data) => {
+            addLog(`⛔ FAIL - Visitor is underage: ${JSON.stringify(data)}`, 'error');
+            showStatus('Access restricted - visitor does not meet age requirement', 'error');
           },
           onError: (error) => {
-            addLog(`Verification error: ${JSON.stringify(error)}`, 'error');
-            showStatus(`Verification failed: ${error.message}`, 'error');
+            addLog(`⚠️ TECHNICAL ERROR: ${JSON.stringify(error)}`, 'error');
+            addLog('Recommendation: Show fallback age confirmation to avoid losing visitor', 'info');
+            showStatus(`Technical error: ${error.message}`, 'error');
+            
+            // Show fallback recommendation
+            setTimeout(() => {
+              if (confirm('Technical issue occurred. Show fallback age confirmation?')) {
+                addLog('Showing fallback age gate...', 'info');
+                const age = prompt('Please enter your age:');
+                if (age && parseInt(age) >= 18) {
+                  addLog('✅ Age confirmed via fallback (18+)', 'success');
+                  showStatus('Age confirmed via fallback', 'success');
+                } else {
+                  addLog('⛔ Access restricted via fallback', 'error');
+                  showStatus('Access restricted', 'error');
+                }
+              }
+            }, 500);
           },
           onCancel: () => {
             addLog('Verification cancelled by user', 'info');

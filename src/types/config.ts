@@ -1,5 +1,5 @@
 export type Theme = 'light' | 'dark' | 'auto';
-export type VerificationMode = 'modal' | 'popup' | 'redirect';
+export type VerificationMode = 'modal' | 'redirect';
 
 export interface AgeminConfig {
   /**
@@ -70,17 +70,23 @@ export interface VerifyOptions {
   metadata?: Record<string, any>;
   
   /**
-   * Callback when verification is successful
+   * Callback when visitor successfully meets age requirement
    */
   onSuccess?: (data: VerificationResult) => void;
   
   /**
-   * Callback when verification fails
+   * Callback when visitor fails to meet age requirement
+   */
+  onFail?: (data: VerificationResult) => void;
+  
+  /**
+   * Callback when technical error occurs (API, network, model errors)
+   * Recommended: Show fallback age confirmation modal
    */
   onError?: (error: VerificationError) => void;
   
   /**
-   * Callback when verification is cancelled
+   * Callback when verification is cancelled by user
    */
   onCancel?: () => void;
   
@@ -108,8 +114,10 @@ export interface VerificationResult {
   
   /**
    * Age verification status
+   * - 'verified': Visitor meets age requirement
+   * - 'underage': Visitor does not meet age requirement
    */
-  status: 'verified' | 'failed' | 'underage';
+  status: 'verified' | 'underage';
   
   /**
    * Additional data from the verification

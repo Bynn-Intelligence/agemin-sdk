@@ -1,5 +1,6 @@
 export enum MessageType {
   SUCCESS = 'agemin:verification:success',
+  FAIL = 'agemin:verification:fail',
   ERROR = 'agemin:verification:error',
   CANCEL = 'agemin:verification:cancel',
   CLOSE = 'agemin:verification:close',

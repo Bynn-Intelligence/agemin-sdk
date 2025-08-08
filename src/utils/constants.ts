@@ -77,10 +77,3 @@ export const ANIMATIONS = `
     to { transform: translateY(20px); opacity: 0; }
   }
 `;
-
-export const POPUP_FEATURES = {
-  width: 500,
-  height: 700,
-  resizable: 'yes',
-  scrollbars: 'yes'
-};

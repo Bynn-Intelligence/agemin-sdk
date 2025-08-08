@@ -5,13 +5,11 @@ import {
 } from '../utils/dom';
 import { 
   MODAL_STYLES, 
-  ANIMATIONS, 
-  POPUP_FEATURES 
+  ANIMATIONS
 } from '../utils/constants';
 
 export class Modal {
-  private verificationWindow: Window | HTMLIFrameElement | null = null;
-  private checkInterval: number | null = null;
+  private verificationWindow: HTMLIFrameElement | null = null;
   private escKeyHandler: ((e: KeyboardEvent) => void) | null = null;
   
   constructor() {
@@ -20,28 +18,6 @@ export class Modal {
   
   private setupStyles(): void {
     addStyles('agemin-styles', ANIMATIONS);
-  }
-  
-  openPopup(url: string, onClose?: () => void): void {
-    const { width, height } = POPUP_FEATURES;
-    const left = (window.screen.width - width) / 2;
-    const top = (window.screen.height - height) / 2;
-    
-    const features = `width=${width},height=${height},left=${left},top=${top},resizable=${POPUP_FEATURES.resizable},scrollbars=${POPUP_FEATURES.scrollbars}`;
-    
-    this.verificationWindow = window.open(url, 'agemin-verification', features);
-    
-    if (!this.verificationWindow) {
-      throw new Error('Popup blocked. Please allow popups for age verification.');
-    }
-    
-    // Monitor popup status
-    this.checkInterval = window.setInterval(() => {
-      if (this.verificationWindow && (this.verificationWindow as Window).closed) {
-        this.cleanup();
-        if (onClose) onClose();
-      }
-    }, 1000);
   }
   
   openIframe(url: string, onClose?: () => void): void {
@@ -113,19 +89,8 @@ export class Modal {
   }
   
   private cleanup(): void {
-    // Close popup if open
-    if (this.verificationWindow && typeof (this.verificationWindow as Window).close === 'function') {
-      (this.verificationWindow as Window).close();
-    }
-    
     // Remove iframe overlay
     removeElement('agemin-overlay');
-    
-    // Clear interval
-    if (this.checkInterval) {
-      clearInterval(this.checkInterval);
-      this.checkInterval = null;
-    }
     
     // Remove event listener
     if (this.escKeyHandler) {
@@ -136,17 +101,11 @@ export class Modal {
     this.verificationWindow = null;
   }
   
-  getWindow(): Window | HTMLIFrameElement | null {
+  getWindow(): HTMLIFrameElement | null {
     return this.verificationWindow;
   }
   
   isOpen(): boolean {
-    if (this.verificationWindow) {
-      if (typeof (this.verificationWindow as Window).closed !== 'undefined') {
-        return !(this.verificationWindow as Window).closed;
-      }
-      return document.getElementById('agemin-iframe') !== null;
-    }
-    return false;
+    return document.getElementById('agemin-iframe') !== null;
   }
 }

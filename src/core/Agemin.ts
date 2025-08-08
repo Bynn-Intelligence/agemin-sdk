@@ -21,6 +21,7 @@ export class Agemin {
   private currentSession: Session | null = null;
   private callbacks: {
     onSuccess?: (data: VerificationResult) => void;
+    onFail?: (data: VerificationResult) => void;
     onError?: (error: VerificationError) => void;
     onCancel?: () => void;
     onClose?: () => void;
@@ -62,6 +63,7 @@ export class Agemin {
     // Store callbacks
     this.callbacks = {
       onSuccess: options.onSuccess,
+      onFail: options.onFail,
       onError: options.onError,
       onCancel: options.onCancel,
       onClose: options.onClose
@@ -89,10 +91,6 @@ export class Agemin {
       switch (mode) {
         case 'redirect':
           window.location.href = url;
-          break;
-          
-        case 'popup':
-          this.modal.openPopup(url, () => this.handleCancel());
           break;
           
         case 'modal':
@@ -168,6 +166,10 @@ export class Agemin {
           this.handleSuccess(message.data);
           break;
           
+        case MessageType.FAIL:
+          this.handleFail(message.data);
+          break;
+          
         case MessageType.ERROR:
           this.handleError(message.data);
           break;
@@ -214,7 +216,7 @@ export class Agemin {
   
   private handleSuccess(data: VerificationResult): void {
     if (this.config.debug) {
-      console.log('Agemin SDK: Verification successful', data);
+      console.log('Agemin SDK: Verification successful - visitor meets age requirement', data);
     }
     
     // Add session info to result
@@ -233,9 +235,26 @@ export class Agemin {
     }
   }
   
+  private handleFail(data: VerificationResult): void {
+    if (this.config.debug) {
+      console.log('Agemin SDK: Verification failed - visitor does not meet age requirement', data);
+    }
+    
+    // Add session info to result
+    if (this.currentSession && !data.sessionId) {
+      data.sessionId = this.currentSession.getId();
+    }
+    
+    this.close();
+    
+    if (this.callbacks.onFail) {
+      this.callbacks.onFail(data);
+    }
+  }
+  
   private handleError(error: VerificationError): void {
     if (this.config.debug) {
-      console.error('Agemin SDK: Verification error', error);
+      console.error('Agemin SDK: Technical error occurred - consider showing fallback age confirmation', error);
     }
     
     this.close();

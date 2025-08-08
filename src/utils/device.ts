@@ -17,6 +17,7 @@ export function isSupported(): boolean {
 /**
  * Get the appropriate verification mode based on device
  */
-export function getDefaultMode(): 'popup' | 'modal' {
-  return isMobile() ? 'popup' : 'modal';
+export function getDefaultMode(): 'modal' {
+  // Always use modal for consistency across devices
+  return 'modal';
 }

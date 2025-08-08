@@ -69,10 +69,15 @@ const agemin = new Agemin({
 // Start verification
 agemin.verify({
   onSuccess: (result) => {
-    console.log('Verification successful:', result);
+    console.log('Age verified - visitor meets requirement:', result);
+  },
+  onFail: (result) => {
+    console.log('Visitor does not meet age requirement:', result);
   },
   onError: (error) => {
-    console.error('Verification failed:', error);
+    // Technical error - show fallback age confirmation
+    console.error('Technical error occurred:', error);
+    showFallbackAgeModal(); // Your backup age gate
   },
   onCancel: () => {
     console.log('User cancelled verification');
@@ -121,13 +126,14 @@ const agemin = new Agemin({
 ```typescript
 agemin.verify({
   // Display mode
-  mode?: 'modal' | 'popup' | 'redirect';  // How to show verification (default: auto-detect)
+  mode?: 'modal' | 'redirect';  // How to show verification (default: modal)
   
   // Callbacks
-  onSuccess?: (result: VerificationResult) => void;
-  onError?: (error: VerificationError) => void;
-  onCancel?: () => void;
-  onClose?: () => void;
+  onSuccess?: (result: VerificationResult) => void;  // Visitor meets age requirement
+  onFail?: (result: VerificationResult) => void;     // Visitor doesn't meet age requirement
+  onError?: (error: VerificationError) => void;      // Technical error (API, network, etc.)
+  onCancel?: () => void;                            // User cancelled verification
+  onClose?: () => void;                             // Modal/popup closed
   
   // Customization
   theme?: 'light' | 'dark' | 'auto';  // Override default theme
@@ -183,22 +189,15 @@ const agemin = new Agemin(config);
 
 ## Verification Modes
 
-### Modal (Default on Desktop)
-Opens verification in an iframe overlay within the current page.
+### Modal (Default)
+Opens verification in an iframe overlay within the current page. Works seamlessly on both desktop and mobile devices.
 
 ```javascript
 agemin.verify({ mode: 'modal' });
 ```
 
-### Popup (Default on Mobile)
-Opens verification in a new browser window.
-
-```javascript
-agemin.verify({ mode: 'popup' });
-```
-
 ### Redirect
-Redirects the entire page to the verification URL.
+Redirects the entire page to the verification URL. Useful for single-page flows or when iframe is not suitable.
 
 ```javascript
 agemin.verify({ mode: 'redirect' });
@@ -206,33 +205,62 @@ agemin.verify({ mode: 'redirect' });
 
 ## Event Handling
 
-The SDK provides comprehensive event callbacks:
+The SDK provides comprehensive event callbacks for different scenarios:
 
 ```javascript
 agemin.verify({
   onSuccess: (result) => {
-    // Called when verification is successful
+    // Visitor successfully verified AND meets age requirement
     console.log('Session ID:', result.sessionId);
     console.log('Verification token:', result.token);
     console.log('Status:', result.status); // 'verified'
+    // Allow access to age-restricted content
+  },
+  
+  onFail: (result) => {
+    // Visitor completed verification but doesn't meet age requirement
+    console.log('Status:', result.status); // 'underage'
+    // Redirect to age-appropriate content or show restriction message
   },
   
   onError: (error) => {
-    // Called when verification fails
+    // Technical error occurred (API, network, model error, etc.)
     console.error('Error code:', error.code);
     console.error('Error message:', error.message);
+    
+    // IMPORTANT: Show fallback age confirmation to avoid losing visitors
+    // Example: Display a simple "Are you 18+" modal as backup
+    showBackupAgeGate();
   },
   
   onCancel: () => {
-    // Called when user cancels verification
+    // User explicitly cancelled the verification process
     console.log('User cancelled');
   },
   
   onClose: () => {
-    // Called when modal/popup is closed
+    // Modal/popup was closed (fired after other callbacks)
     console.log('Verification window closed');
   }
 });
+```
+
+### Important: Handling Technical Errors
+
+When `onError` is triggered (technical issues), we strongly recommend showing a fallback age confirmation modal to ensure you don't lose potential visitors due to temporary technical issues:
+
+```javascript
+function showBackupAgeGate() {
+  // Simple fallback when Agemin verification has technical issues
+  const confirmed = confirm('Please confirm you are 18 or older to continue');
+  if (confirmed) {
+    // Allow access with degraded verification
+    allowAccess();
+  } else {
+    // Redirect to age-appropriate content
+    window.location.href = '/underage';
+  }
+}
 ```
 
 ## Examples
@@ -261,8 +289,16 @@ function AgeVerification() {
         // Store verification token
         localStorage.setItem('agemin_token', result.token);
       },
+      onFail: (result) => {
+        // Visitor is underage
+        alert('You must be 18 or older to access this content');
+        window.location.href = '/age-restricted';
+      },
       onError: (error) => {
-        alert(`Verification failed: ${error.message}`);
+        // Technical error - show fallback
+        if (confirm('Please confirm you are 18 or older')) {
+          setIsVerified(true);
+        }
       }
     });
   };
@@ -395,33 +431,64 @@ The SDK implements several security measures:
 
 ## Error Handling
 
-The SDK provides detailed error information:
+The SDK distinguishes between verification failures and technical errors:
+
+### Verification Results
+
+```javascript
+agemin.verify({
+  onSuccess: (result) => {
+    // result.status === 'verified'
+    // Visitor meets age requirement - grant access
+  },
+  
+  onFail: (result) => {
+    // result.status === 'underage'
+    // Visitor doesn't meet age requirement - restrict access
+  }
+});
+```
+
+### Technical Errors
+
+Technical errors trigger `onError` and should be handled with a fallback:
 
 ```javascript
 agemin.verify({
   onError: (error) => {
+    // Log the technical error for debugging
+    console.error('Technical error:', error.code, error.message);
+    
+    // Show fallback age gate to avoid losing visitors
     switch (error.code) {
       case 'POPUP_BLOCKED':
-        // Handle popup blocker
         alert('Please allow popups for age verification');
-        break;
-      
-      case 'BROWSER_NOT_SUPPORTED':
-        // Handle unsupported browser
-        alert('Please use a modern browser');
+        showSimpleAgeGate();
         break;
       
       case 'NETWORK_ERROR':
-        // Handle network issues
-        alert('Please check your internet connection');
+      case 'API_ERROR':
+      case 'MODEL_ERROR':
+        // Don't lose the visitor - show backup age confirmation
+        showSimpleAgeGate();
         break;
       
       default:
-        // Handle other errors
-        console.error('Verification error:', error);
+        showSimpleAgeGate();
     }
   }
 });
+
+function showSimpleAgeGate() {
+  // Fallback for when Agemin verification has technical issues
+  const isAdult = confirm('Are you 18 years or older?');
+  if (isAdult) {
+    // Grant degraded access
+    grantAccess(/* limited = */ true);
+  } else {
+    redirectToAgeAppropriate();
+  }
+}
 ```
 
 ## License
