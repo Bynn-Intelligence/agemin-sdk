@@ -110,6 +110,33 @@ export const MOBILE_MODAL_STYLES = {
   `
 };
 
+export const SPINNER_STYLES = {
+  container: `
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000002;
+  `,
+  spinner: `
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: agemin-spin 1s linear infinite;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  `,
+  spinnerMobile: `
+    width: 56px;
+    height: 56px;
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: agemin-spin 1s linear infinite;
+  `
+};
+
 export const ANIMATIONS = `
   @keyframes agemin-fade-in {
     from { opacity: 0; }
@@ -126,5 +153,9 @@ export const ANIMATIONS = `
   @keyframes agemin-slide-down {
     from { transform: translateY(0); opacity: 1; }
     to { transform: translateY(20px); opacity: 0; }
+  }
+  @keyframes agemin-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 `;

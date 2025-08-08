@@ -6,13 +6,15 @@ import {
 import { 
   MODAL_STYLES,
   MOBILE_MODAL_STYLES, 
-  ANIMATIONS
+  ANIMATIONS,
+  SPINNER_STYLES
 } from '../utils/constants';
 import { isSmallScreen } from '../utils/device';
 
 export class Modal {
   private verificationWindow: HTMLIFrameElement | null = null;
   private escKeyHandler: ((e: KeyboardEvent) => void) | null = null;
+  private loadingSpinner: HTMLDivElement | null = null;
   
   constructor() {
     this.setupStyles();
@@ -30,6 +32,12 @@ export class Modal {
     // Create overlay
     const overlay = createElement('div', { id: 'agemin-overlay' }, styles.overlay);
     
+    // Create loading spinner
+    this.loadingSpinner = createElement('div', { id: 'agemin-spinner-container' }, SPINNER_STYLES.container) as HTMLDivElement;
+    const spinner = createElement('div', { id: 'agemin-spinner' }, 
+      isMobileView ? SPINNER_STYLES.spinnerMobile : SPINNER_STYLES.spinner);
+    this.loadingSpinner.appendChild(spinner);
+    
     if (isMobileView) {
       // Mobile: fullscreen mode - overlay is the container
       // Create close button
@@ -42,17 +50,18 @@ export class Modal {
         if (onClose) onClose();
       };
       
-      // Create iframe
+      // Create iframe (initially hidden)
       const iframe = createElement('iframe', {
         id: 'agemin-iframe',
         src: url,
         allow: 'camera; microphone'
-      }, styles.iframe) as HTMLIFrameElement;
+      }, styles.iframe + 'opacity: 0; transition: opacity 0.3s ease-out;') as HTMLIFrameElement;
       
       this.verificationWindow = iframe;
       
       // Append directly to overlay for fullscreen
       overlay.appendChild(iframe);
+      overlay.appendChild(this.loadingSpinner); // Add spinner
       overlay.appendChild(closeBtn); // Close button on top
       document.body.appendChild(overlay);
       
@@ -72,18 +81,19 @@ export class Modal {
         if (onClose) onClose();
       };
       
-      // Create iframe
+      // Create iframe (initially hidden)
       const iframe = createElement('iframe', {
         id: 'agemin-iframe',
         src: url,
         allow: 'camera; microphone'
-      }, styles.iframe) as HTMLIFrameElement;
+      }, styles.iframe + 'opacity: 0; transition: opacity 0.3s ease-out;') as HTMLIFrameElement;
       
       this.verificationWindow = iframe;
       
       // Assemble modal
       modal.appendChild(closeBtn);
       modal.appendChild(iframe);
+      modal.appendChild(this.loadingSpinner); // Add spinner
       overlay.appendChild(modal);
       document.body.appendChild(overlay);
     }
@@ -160,6 +170,28 @@ export class Modal {
       
       // Apply the new height with smooth transition
       modal.style.height = `${clampedHeight}px`;
+    }
+  }
+  
+  hideLoading(): void {
+    // Hide spinner with fade out
+    if (this.loadingSpinner) {
+      this.loadingSpinner.style.opacity = '0';
+      this.loadingSpinner.style.transition = 'opacity 0.3s ease-out';
+      
+      // Remove spinner after animation
+      setTimeout(() => {
+        if (this.loadingSpinner && this.loadingSpinner.parentNode) {
+          this.loadingSpinner.parentNode.removeChild(this.loadingSpinner);
+          this.loadingSpinner = null;
+        }
+      }, 300);
+    }
+    
+    // Show iframe with fade in
+    const iframe = document.getElementById('agemin-iframe');
+    if (iframe) {
+      iframe.style.opacity = '1';
     }
   }
 }

@@ -341,6 +341,9 @@ export class Agemin {
       console.log('Agemin SDK: Verification interface ready');
     }
 
+    // Hide loading spinner and show iframe
+    this.modal.hideLoading();
+
     // Send configuration to iframe if needed
     const iframe = this.modal.getWindow();
     if (iframe && iframe instanceof HTMLIFrameElement && iframe.contentWindow) {
