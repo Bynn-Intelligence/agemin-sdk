@@ -226,7 +226,7 @@
       
       <div class="form-group">
         <label for="asset-id">Asset ID</label>
-        <input type="text" id="asset-id" value="test-asset-id" placeholder="Enter your asset ID">
+        <input type="text" id="asset-id" value="asset_5b08b274353b92f4" placeholder="Enter your Asset ID from agemin.com/app/websites">
       </div>
       
       <div class="form-group">
@@ -358,8 +358,12 @@
     
     function initializeSDK() {
       try {
+        // Generate session ID (in production, this must come from your backend)
+        const sessionId = 'test-session-' + Date.now();
+        
         const config = {
           assetId: document.getElementById('asset-id').value,
+          sessionId: sessionId, // Must be generated server-side in production
           baseUrl: document.getElementById('base-url').value,
           theme: document.getElementById('theme').value,
           locale: document.getElementById('locale').value,
@@ -400,12 +404,9 @@
           mode: mode,
           metadata: metadata,
           onSuccess: (data) => {
-            addLog(`✅ SUCCESS - Visitor meets age requirement: ${JSON.stringify(data)}`, 'success');
-            showStatus('Age verified! Visitor meets requirement', 'success');
-          },
-          onFail: (data) => {
-            addLog(`⛔ FAIL - Visitor is underage: ${JSON.stringify(data)}`, 'error');
-            showStatus('Access restricted - visitor does not meet age requirement', 'error');
+            addLog(`✅ Verification completed: ${JSON.stringify(data)}`, 'success');
+            showStatus('Verification completed! Check result server-side', 'success');
+            addLog('In production: Use session ID to verify result on backend', 'info');
           },
           onError: (error) => {
             addLog(`⚠️ TECHNICAL ERROR: ${JSON.stringify(error)}`, 'error');

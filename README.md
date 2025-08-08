@@ -9,8 +9,9 @@ A secure, type-safe JavaScript/TypeScript SDK for integrating Agemin age verific
 
 > **📝 Prerequisites**: 
 > 1. Create a free account on [agemin.com](https://agemin.com)
-> 2. Get your **Asset ID** (public key) and **Private Key** from [agemin.com/app/api-keys](https://agemin.com/app/api-keys)
-> 3. Keep your Private Key secure on your backend server
+> 2. Get your **Asset ID** from [agemin.com/app/websites](https://agemin.com/app/websites) (format: `asset_5b08b274353b92f4`)
+> 3. Get your **Private Key** from [agemin.com/app/api-keys](https://agemin.com/app/api-keys)
+> 4. Keep your Private Key secure on your backend server
 
 ## Features
 
@@ -25,13 +26,15 @@ A secure, type-safe JavaScript/TypeScript SDK for integrating Agemin age verific
 ## Getting Started
 
 1. **Sign up for a free account** at [agemin.com](https://agemin.com)
-2. **Get your API keys** at [agemin.com/app/api-keys](https://agemin.com/app/api-keys)
-   - **Asset ID** (public key) - Use in frontend SDK
-   - **Private Key** (secret) - Keep secure on backend only
-3. **Install the SDK** using your preferred package manager
-4. **Generate session IDs** server-side for each verification
-5. **Initialize SDK** with Asset ID and Session ID
-6. **Verify results** server-side using your Private Key
+2. **Get your Asset ID** at [agemin.com/app/websites](https://agemin.com/app/websites)
+   - Each website/app has a unique Asset ID (e.g., `asset_5b08b274353b92f4`)
+   - Use this Asset ID in your frontend SDK
+3. **Get your Private Key** at [agemin.com/app/api-keys](https://agemin.com/app/api-keys)
+   - Keep this secure on your backend only
+4. **Install the SDK** using your preferred package manager
+5. **Generate session IDs** server-side for each verification
+6. **Initialize SDK** with Asset ID and Session ID
+7. **Verify results** server-side using your Private Key
 
 ## Installation
 
@@ -75,7 +78,7 @@ const { sessionId } = await response.json();
 
 // 2. Initialize SDK with Asset ID and Session ID
 const agemin = new Agemin({
-  assetId: 'your-asset-id',  // Public key from agemin.com/app/api-keys
+  assetId: 'asset_5b08b274353b92f4',  // Your Asset ID from agemin.com/app/websites
   sessionId: sessionId,       // Unique session ID from your backend (max 50 bytes)
   metadata: { userId: 123 },  // Optional metadata (max 50 bytes when stringified)
   debug: true
@@ -167,7 +170,7 @@ You can configure the SDK directly in HTML using data attributes:
 
 ```html
 <script src="https://unpkg.com/@bynn-intelligence/agemin-sdk/dist/agemin-sdk.min.js"
-  data-agemin-asset-id="your-asset-id"
+  data-agemin-asset-id="asset_5b08b274353b92f4"
   data-agemin-session-id="unique-session-id"
   data-agemin-theme="auto"
   data-agemin-locale="en"
@@ -187,7 +190,7 @@ You can configure the SDK directly in HTML using data attributes:
 ```typescript
 const agemin = new Agemin({
   // Required
-  assetId: string;           // Your public Asset ID from agemin.com/app/api-keys
+  assetId: string;           // Your Asset ID from agemin.com/app/websites (e.g., 'asset_5b08b274353b92f4')
   sessionId: string;         // Unique session ID (max 50 bytes, generate server-side)
   
   // Optional
@@ -278,7 +281,7 @@ import Agemin, {
 
 // Full type safety and IntelliSense support
 const config: AgeminConfig = {
-  assetId: 'your-asset-id',
+  assetId: 'asset_5b08b274353b92f4',
   theme: 'dark'
 };
 
@@ -555,10 +558,11 @@ sequenceDiagram
 
 ### API Keys
 
-Get your keys at [agemin.com/app/api-keys](https://agemin.com/app/api-keys):
-
-- **Asset ID** (Public): Safe to use in frontend code
-- **Private Key** (Secret): NEVER expose in frontend code, keep on backend only
+- **Asset ID**: Get from [agemin.com/app/websites](https://agemin.com/app/websites)
+  - Each website/app has a unique Asset ID (format: `asset_5b08b274353b92f4`)
+  - Safe to use in frontend code
+- **Private Key**: Get from [agemin.com/app/api-keys](https://agemin.com/app/api-keys)
+  - NEVER expose in frontend code, keep on backend only
 
 ### Best Practices
 

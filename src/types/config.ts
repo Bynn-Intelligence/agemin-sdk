@@ -3,7 +3,8 @@ export type VerificationMode = 'modal' | 'redirect';
 
 export interface AgeminConfig {
   /**
-   * Your unique asset ID provided by Agemin (public key)
+   * Your unique asset ID from agemin.com/app/websites
+   * Format: asset_5b08b274353b92f4
    */
   assetId: string;
   
