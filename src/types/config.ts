@@ -3,9 +3,22 @@ export type VerificationMode = 'modal' | 'redirect';
 
 export interface AgeminConfig {
   /**
-   * Your unique asset ID provided by Agemin
+   * Your unique asset ID provided by Agemin (public key)
    */
   assetId: string;
+  
+  /**
+   * Unique session ID for this verification request
+   * Should be generated server-side for security
+   * Maximum 50 bytes
+   */
+  sessionId: string;
+  
+  /**
+   * Optional metadata to attach to the verification
+   * Maximum 50 bytes (will be JSON stringified)
+   */
+  metadata?: Record<string, any>;
   
   /**
    * Base URL for the Agemin verification service
@@ -70,14 +83,11 @@ export interface VerifyOptions {
   metadata?: Record<string, any>;
   
   /**
-   * Callback when visitor successfully meets age requirement
+   * Callback when verification process completes successfully
+   * Note: This does NOT indicate if age requirement was met
+   * You must verify the result server-side using your private key
    */
   onSuccess?: (data: VerificationResult) => void;
-  
-  /**
-   * Callback when visitor fails to meet age requirement
-   */
-  onFail?: (data: VerificationResult) => void;
   
   /**
    * Callback when technical error occurs (API, network, model errors)
@@ -99,30 +109,20 @@ export interface VerifyOptions {
 export interface VerificationResult {
   /**
    * Unique session ID for this verification
+   * Use this to fetch actual results server-side
    */
   sessionId: string;
   
   /**
-   * Verification token
+   * Indicates verification process completed successfully
+   * Does NOT indicate if age requirement was met
    */
-  token: string;
+  completed: boolean;
   
   /**
-   * Timestamp of verification
+   * Timestamp when verification completed
    */
   timestamp: number;
-  
-  /**
-   * Age verification status
-   * - 'verified': Visitor meets age requirement
-   * - 'underage': Visitor does not meet age requirement
-   */
-  status: 'verified' | 'underage';
-  
-  /**
-   * Additional data from the verification
-   */
-  data?: Record<string, any>;
 }
 
 export interface VerificationError {

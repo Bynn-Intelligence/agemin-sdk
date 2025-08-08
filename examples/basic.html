@@ -112,9 +112,14 @@
   <script src="../dist/agemin-sdk.umd.js"></script>
   
   <script>
+    // Simulate getting session ID from backend
+    // In production, this would be an API call to your server
+    const sessionId = 'test-session-' + Date.now();
+    
     // Initialize the SDK
     const agemin = new Agemin({
       assetId: 'test-asset-id', // Replace with your actual asset ID
+      sessionId: sessionId, // Must be generated server-side in production
       baseUrl: 'http://localhost:5173', // Point to local Agemin app for testing
       debug: true
     });
@@ -139,16 +144,23 @@
           timestamp: Date.now()
         },
         onSuccess: (data) => {
-          console.log('Verification successful - visitor meets age requirement:', data);
-          showResult(`✅ Age verified! Visitor meets the age requirement. Session: ${data.sessionId}`, 'success');
-        },
-        onFail: (data) => {
-          console.log('Verification failed - visitor is underage:', data);
-          showResult(`⛔ Access restricted. Visitor does not meet the age requirement.`, 'error');
-          // Redirect to age-appropriate content
-          setTimeout(() => {
-            showResult('Redirecting to age-appropriate content...', 'info');
-          }, 2000);
+          console.log('Verification completed:', data);
+          showResult(`✅ Verification completed! Session: ${data.sessionId}`, 'success');
+          
+          // In production, you would check the result server-side:
+          showResult('In production: Check result on your backend using the session ID', 'info');
+          
+          // Example of what you'd do in production:
+          // fetch('/api/verify', { 
+          //   method: 'POST',
+          //   body: JSON.stringify({ sessionId: data.sessionId })
+          // }).then(res => res.json()).then(result => {
+          //   if (result.verified) {
+          //     // User meets age requirement
+          //   } else {
+          //     // User doesn't meet age requirement
+          //   }
+          // });
         },
         onError: (error) => {
           console.error('Technical error occurred:', error);

@@ -3,9 +3,14 @@
 [![npm version](https://img.shields.io/npm/v/@bynn-intelligence/agemin-sdk.svg)](https://www.npmjs.com/package/@bynn-intelligence/agemin-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A powerful, type-safe JavaScript/TypeScript SDK for integrating Agemin age verification into your web applications.
+A secure, type-safe JavaScript/TypeScript SDK for integrating Agemin age verification into your web applications.
 
-> **📝 Prerequisites**: You need a free account on [agemin.com](https://agemin.com) to use this SDK. Sign up to get your Asset ID and start verifying ages in minutes.
+> **🔒 Security-First Design**: This SDK uses a secure architecture where verification results are only accessible server-side using your private API key, preventing abuse and ensuring billing security.
+
+> **📝 Prerequisites**: 
+> 1. Create a free account on [agemin.com](https://agemin.com)
+> 2. Get your **Asset ID** (public key) and **Private Key** from [agemin.com/app/api-keys](https://agemin.com/app/api-keys)
+> 3. Keep your Private Key secure on your backend server
 
 ## Features
 
@@ -20,9 +25,13 @@ A powerful, type-safe JavaScript/TypeScript SDK for integrating Agemin age verif
 ## Getting Started
 
 1. **Sign up for a free account** at [agemin.com](https://agemin.com)
-2. **Create an asset** in your dashboard to get your Asset ID
+2. **Get your API keys** at [agemin.com/app/api-keys](https://agemin.com/app/api-keys)
+   - **Asset ID** (public key) - Use in frontend SDK
+   - **Private Key** (secret) - Keep secure on backend only
 3. **Install the SDK** using your preferred package manager
-4. **Initialize with your Asset ID** and start verifying!
+4. **Generate session IDs** server-side for each verification
+5. **Initialize SDK** with Asset ID and Session ID
+6. **Verify results** server-side using your Private Key
 
 ## Installation
 
@@ -55,33 +64,100 @@ pnpm add @bynn-intelligence/agemin-sdk
 
 ## Quick Start
 
-### Basic Usage
+### Frontend Implementation
 
 ```javascript
 import Agemin from '@bynn-intelligence/agemin-sdk';
 
-// Initialize the SDK with your Asset ID from agemin.com
+// 1. Get session ID from your backend
+const response = await fetch('/api/agemin/session', { method: 'POST' });
+const { sessionId } = await response.json();
+
+// 2. Initialize SDK with Asset ID and Session ID
 const agemin = new Agemin({
-  assetId: 'your-asset-id', // Required: Get this from your Agemin dashboard
-  debug: true // Optional: Enable debug logging
+  assetId: 'your-asset-id',  // Public key from agemin.com/app/api-keys
+  sessionId: sessionId,       // Unique session ID from your backend (max 50 bytes)
+  metadata: { userId: 123 },  // Optional metadata (max 50 bytes when stringified)
+  debug: true
 });
 
-// Start verification
+// 3. Start verification
 agemin.verify({
-  onSuccess: (result) => {
-    console.log('Age verified - visitor meets requirement:', result);
-  },
-  onFail: (result) => {
-    console.log('Visitor does not meet age requirement:', result);
+  onSuccess: async (result) => {
+    // Verification completed - check actual result server-side
+    console.log('Verification completed:', result.sessionId);
+    
+    // 4. Verify the actual result on your backend
+    const verifyResponse = await fetch('/api/agemin/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: result.sessionId })
+    });
+    
+    const { verified, age } = await verifyResponse.json();
+    if (verified) {
+      // User meets age requirement
+      window.location.href = '/protected-content';
+    } else {
+      // User doesn't meet age requirement
+      window.location.href = '/age-restricted';
+    }
   },
   onError: (error) => {
-    // Technical error - show fallback age confirmation
-    console.error('Technical error occurred:', error);
-    showFallbackAgeModal(); // Your backup age gate
+    // Technical error - show fallback
+    console.error('Technical error:', error);
+    showFallbackAgeModal();
   },
   onCancel: () => {
     console.log('User cancelled verification');
   }
+});
+```
+
+### Backend Implementation (Node.js Example)
+
+```javascript
+// Generate session endpoint
+app.post('/api/agemin/session', (req, res) => {
+  // Generate unique session ID
+  const sessionId = crypto.randomUUID();
+  
+  // Store session in database with user context
+  await db.sessions.create({
+    id: sessionId,
+    userId: req.user?.id,
+    createdAt: new Date()
+  });
+  
+  res.json({ sessionId });
+});
+
+// Verify result endpoint
+app.post('/api/agemin/verify', async (req, res) => {
+  const { sessionId } = req.body;
+  
+  // Fetch verification result from Agemin API using Private Key
+  const result = await fetch(`https://api.agemin.com/v1/agemin/result?sessionId=${sessionId}`, {
+    headers: {
+      'Authorization': `Bearer ${process.env.AGEMIN_PRIVATE_KEY}` // Private key from agemin.com/app/api-keys
+    }
+  });
+  
+  const verification = await result.json();
+  
+  // Check if user meets age requirement
+  const verified = verification.status === 'verified';
+  
+  // Update session in database
+  await db.sessions.update(sessionId, {
+    verified,
+    completedAt: new Date()
+  });
+  
+  res.json({ 
+    verified,
+    age: verification.age // Only if needed
+  });
 });
 ```
 
@@ -92,6 +168,7 @@ You can configure the SDK directly in HTML using data attributes:
 ```html
 <script src="https://unpkg.com/@bynn-intelligence/agemin-sdk/dist/agemin-sdk.min.js"
   data-agemin-asset-id="your-asset-id"
+  data-agemin-session-id="unique-session-id"
   data-agemin-theme="auto"
   data-agemin-locale="en"
   data-agemin-debug="true">
@@ -101,6 +178,8 @@ You can configure the SDK directly in HTML using data attributes:
 <button data-agemin-trigger>Verify My Age</button>
 ```
 
+**Note**: The session ID must be generated server-side and injected into the HTML for security.
+
 ## Configuration Options
 
 ### SDK Initialization
@@ -108,9 +187,11 @@ You can configure the SDK directly in HTML using data attributes:
 ```typescript
 const agemin = new Agemin({
   // Required
-  assetId: string;           // Your unique Agemin asset ID
+  assetId: string;           // Your public Asset ID from agemin.com/app/api-keys
+  sessionId: string;         // Unique session ID (max 50 bytes, generate server-side)
   
   // Optional
+  metadata?: Record<string, any>;  // Custom metadata (max 50 bytes when stringified)
   baseUrl?: string;           // Custom verification URL (default: 'https://verify.agemin.com')
   theme?: 'light' | 'dark' | 'auto';  // UI theme (default: 'auto')
   locale?: string;            // Language locale (default: 'en')
@@ -121,6 +202,12 @@ const agemin = new Agemin({
 });
 ```
 
+**Size Limits**:
+- `sessionId`: Maximum 50 bytes
+- `metadata`: Maximum 50 bytes when JSON stringified
+
+These limits ensure efficient data transmission and prevent abuse.
+
 ### Verification Options
 
 ```typescript
@@ -129,11 +216,10 @@ agemin.verify({
   mode?: 'modal' | 'redirect';  // How to show verification (default: modal)
   
   // Callbacks
-  onSuccess?: (result: VerificationResult) => void;  // Visitor meets age requirement
-  onFail?: (result: VerificationResult) => void;     // Visitor doesn't meet age requirement
+  onSuccess?: (result: VerificationResult) => void;  // Verification completed (check result server-side)
   onError?: (error: VerificationError) => void;      // Technical error (API, network, etc.)
   onCancel?: () => void;                            // User cancelled verification
-  onClose?: () => void;                             // Modal/popup closed
+  onClose?: () => void;                             // Modal closed
   
   // Customization
   theme?: 'light' | 'dark' | 'auto';  // Override default theme
@@ -141,6 +227,18 @@ agemin.verify({
   metadata?: Record<string, any>;      // Custom metadata to attach
 });
 ```
+
+### VerificationResult Object
+
+```typescript
+interface VerificationResult {
+  sessionId: string;   // Session ID to verify on backend
+  completed: boolean;  // Verification process completed
+  timestamp: number;   // Completion timestamp
+}
+```
+
+**Important**: The `onSuccess` callback only indicates the verification process completed. You MUST verify the actual age verification result server-side using your Private Key.
 
 ## API Reference
 
@@ -420,34 +518,57 @@ npm run build
 open examples/basic.html
 ```
 
-## Security
+## Security Architecture
 
-The SDK implements several security measures:
+### Why Server-Side Verification?
 
-- **Domain Validation**: Only accepts messages from trusted Agemin domains
-- **Secure Communication**: Uses postMessage API for cross-origin communication
-- **Session Management**: Generates unique session IDs for each verification
-- **Input Sanitization**: All inputs are validated and sanitized
+This SDK uses a secure two-step verification process:
+
+1. **Frontend** handles the UI/UX of age verification
+2. **Backend** fetches and validates the actual results
+
+This architecture prevents:
+- **Billing fraud**: Others can't use your Asset ID without your knowledge
+- **Result tampering**: Verification results can't be faked client-side
+- **API key exposure**: Your Private Key never leaves your server
+
+### Security Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant YourBackend
+    participant AgeminAPI
+    
+    User->>Frontend: Initiate verification
+    Frontend->>YourBackend: Request session ID
+    YourBackend->>Frontend: Return unique session ID
+    Frontend->>AgeminAPI: Start verification (Asset ID + Session ID)
+    User->>AgeminAPI: Complete verification
+    AgeminAPI->>Frontend: Verification completed
+    Frontend->>YourBackend: Check result (Session ID)
+    YourBackend->>AgeminAPI: GET /result (Private Key + Session ID)
+    AgeminAPI->>YourBackend: Return actual result
+    YourBackend->>Frontend: Return verified/not verified
+```
+
+### API Keys
+
+Get your keys at [agemin.com/app/api-keys](https://agemin.com/app/api-keys):
+
+- **Asset ID** (Public): Safe to use in frontend code
+- **Private Key** (Secret): NEVER expose in frontend code, keep on backend only
+
+### Best Practices
+
+1. **Generate Session IDs server-side**: Use cryptographically secure random generators
+2. **Validate sessions**: Track sessions in your database to prevent replay attacks
+3. **Set session expiry**: Expire unused sessions after a reasonable time
+4. **Use HTTPS**: Always use HTTPS in production
+5. **Secure your Private Key**: Store in environment variables, never commit to code
 
 ## Error Handling
-
-The SDK distinguishes between verification failures and technical errors:
-
-### Verification Results
-
-```javascript
-agemin.verify({
-  onSuccess: (result) => {
-    // result.status === 'verified'
-    // Visitor meets age requirement - grant access
-  },
-  
-  onFail: (result) => {
-    // result.status === 'underage'
-    // Visitor doesn't meet age requirement - restrict access
-  }
-});
-```
 
 ### Technical Errors
 

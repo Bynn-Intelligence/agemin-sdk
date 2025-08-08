@@ -1,5 +1,4 @@
 import { Modal } from './Modal';
-import { Session } from './Session';
 import { 
   AgeminConfig, 
   VerifyOptions, 
@@ -18,10 +17,8 @@ import { getDefaultMode, isSupported } from '../utils/device';
 export class Agemin {
   private config: Required<AgeminConfig>;
   private modal: Modal;
-  private currentSession: Session | null = null;
   private callbacks: {
     onSuccess?: (data: VerificationResult) => void;
-    onFail?: (data: VerificationResult) => void;
     onError?: (error: VerificationError) => void;
     onCancel?: () => void;
     onClose?: () => void;
@@ -30,6 +27,25 @@ export class Agemin {
   constructor(config: AgeminConfig) {
     if (!config || !config.assetId) {
       throw new Error('Agemin SDK: assetId is required');
+    }
+    
+    if (!config.sessionId) {
+      throw new Error('Agemin SDK: sessionId is required for security. Generate this server-side.');
+    }
+    
+    // Validate sessionId size (max 50 bytes)
+    const sessionIdBytes = new TextEncoder().encode(config.sessionId).length;
+    if (sessionIdBytes > 50) {
+      throw new Error(`Agemin SDK: sessionId exceeds 50 bytes limit (current: ${sessionIdBytes} bytes)`);
+    }
+    
+    // Validate metadata size if provided (max 50 bytes when stringified)
+    if (config.metadata) {
+      const metadataString = JSON.stringify(config.metadata);
+      const metadataBytes = new TextEncoder().encode(metadataString).length;
+      if (metadataBytes > 50) {
+        throw new Error(`Agemin SDK: metadata exceeds 50 bytes limit when stringified (current: ${metadataBytes} bytes)`);
+      }
     }
     
     if (!isSupported()) {
@@ -63,15 +79,13 @@ export class Agemin {
     // Store callbacks
     this.callbacks = {
       onSuccess: options.onSuccess,
-      onFail: options.onFail,
       onError: options.onError,
       onCancel: options.onCancel,
       onClose: options.onClose
     };
     
-    // Create new session
-    this.currentSession = new Session(options.metadata);
-    const sessionId = this.currentSession.getId();
+    // Use the sessionId from config
+    const sessionId = this.config.sessionId;
     
     // Build verification URL
     const url = this.buildVerificationUrl(sessionId, options);
@@ -117,10 +131,10 @@ export class Agemin {
   }
   
   /**
-   * Get the current session
+   * Get the session ID
    */
-  getSession(): Session | null {
-    return this.currentSession;
+  getSessionId(): string {
+    return this.config.sessionId;
   }
   
   /**
@@ -166,10 +180,6 @@ export class Agemin {
           this.handleSuccess(message.data);
           break;
           
-        case MessageType.FAIL:
-          this.handleFail(message.data);
-          break;
-          
         case MessageType.ERROR:
           this.handleError(message.data);
           break;
@@ -207,6 +217,12 @@ export class Agemin {
     if (this.config.successUrl) params.success_url = this.config.successUrl;
     if (this.config.cancelUrl) params.cancel_url = this.config.cancelUrl;
     
+    // Include metadata from config (already validated in constructor)
+    if (this.config.metadata) {
+      params.metadata = this.config.metadata;
+    }
+    
+    // Options metadata can override config metadata
     if (options.metadata) {
       params.metadata = options.metadata;
     }
@@ -214,41 +230,26 @@ export class Agemin {
     return buildUrl(this.config.baseUrl, params);
   }
   
-  private handleSuccess(data: VerificationResult): void {
+  private handleSuccess(data: any): void {
     if (this.config.debug) {
-      console.log('Agemin SDK: Verification successful - visitor meets age requirement', data);
+      console.log('Agemin SDK: Verification process completed', data);
     }
     
-    // Add session info to result
-    if (this.currentSession && !data.sessionId) {
-      data.sessionId = this.currentSession.getId();
-    }
+    // Create result with only sessionId and completed status
+    const result: VerificationResult = {
+      sessionId: this.config.sessionId,
+      completed: true,
+      timestamp: Date.now()
+    };
     
     this.close();
     
     if (this.callbacks.onSuccess) {
-      this.callbacks.onSuccess(data);
+      this.callbacks.onSuccess(result);
     }
     
     if (this.config.successUrl) {
       window.location.href = this.config.successUrl;
-    }
-  }
-  
-  private handleFail(data: VerificationResult): void {
-    if (this.config.debug) {
-      console.log('Agemin SDK: Verification failed - visitor does not meet age requirement', data);
-    }
-    
-    // Add session info to result
-    if (this.currentSession && !data.sessionId) {
-      data.sessionId = this.currentSession.getId();
-    }
-    
-    this.close();
-    
-    if (this.callbacks.onFail) {
-      this.callbacks.onFail(data);
     }
   }
   
@@ -319,7 +320,6 @@ export class Agemin {
   }
   
   private cleanup(): void {
-    this.currentSession = null;
     this.callbacks = {};
   }
 }

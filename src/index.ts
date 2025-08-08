@@ -1,11 +1,10 @@
 import { Agemin } from './core/Agemin';
-import { Session } from './core/Session';
 
 // Export main class as default
 export default Agemin;
 
 // Named exports
-export { Agemin, Session };
+export { Agemin };
 
 // Export all types
 export * from './types';
@@ -18,6 +17,7 @@ if (typeof document !== 'undefined') {
     if (script) {
       const config = {
         assetId: script.getAttribute('data-agemin-asset-id')!,
+        sessionId: script.getAttribute('data-agemin-session-id')!,
         errorUrl: script.getAttribute('data-agemin-error-url') || undefined,
         successUrl: script.getAttribute('data-agemin-success-url') || undefined,
         cancelUrl: script.getAttribute('data-agemin-cancel-url') || undefined,
@@ -25,6 +25,12 @@ if (typeof document !== 'undefined') {
         locale: script.getAttribute('data-agemin-locale') || undefined,
         debug: script.getAttribute('data-agemin-debug') === 'true'
       };
+      
+      // Check if sessionId is present
+      if (!config.sessionId) {
+        console.error('Agemin SDK: data-agemin-session-id is required for auto-initialization');
+        return;
+      }
       
       // Remove undefined values
       Object.keys(config).forEach(key => {
