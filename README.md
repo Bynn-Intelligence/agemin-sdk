@@ -5,6 +5,8 @@
 
 A powerful, type-safe JavaScript/TypeScript SDK for integrating Agemin age verification into your web applications.
 
+> **📝 Prerequisites**: You need a free account on [agemin.com](https://agemin.com) to use this SDK. Sign up to get your Asset ID and start verifying ages in minutes.
+
 ## Features
 
 - 🚀 **Easy Integration** - Simple API with automatic initialization support
@@ -14,6 +16,13 @@ A powerful, type-safe JavaScript/TypeScript SDK for integrating Agemin age verif
 - 📦 **Lightweight** - Zero runtime dependencies
 - 💪 **TypeScript** - Full TypeScript support with comprehensive type definitions
 - 🎯 **Flexible** - Multiple verification modes (modal, popup, redirect)
+
+## Getting Started
+
+1. **Sign up for a free account** at [agemin.com](https://agemin.com)
+2. **Create an asset** in your dashboard to get your Asset ID
+3. **Install the SDK** using your preferred package manager
+4. **Initialize with your Asset ID** and start verifying!
 
 ## Installation
 
@@ -51,9 +60,9 @@ pnpm add @bynn-intelligence/agemin-sdk
 ```javascript
 import Agemin from '@bynn-intelligence/agemin-sdk';
 
-// Initialize the SDK
+// Initialize the SDK with your Asset ID from agemin.com
 const agemin = new Agemin({
-  assetId: 'your-asset-id', // Required: Your Agemin asset ID
+  assetId: 'your-asset-id', // Required: Get this from your Agemin dashboard
   debug: true // Optional: Enable debug logging
 });
 
