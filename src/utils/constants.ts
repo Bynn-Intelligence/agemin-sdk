@@ -3,7 +3,7 @@ export const SDK_VERSION = '__VERSION__';
 export const DEFAULT_CONFIG = {
   baseUrl: 'https://verify.agemin.com',
   theme: 'auto' as const,
-  locale: 'en',
+  locale: 'auto',
   debug: false
 };
 

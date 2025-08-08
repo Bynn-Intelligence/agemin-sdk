@@ -226,7 +226,7 @@ agemin.verify({
   
   // Customization
   theme?: 'light' | 'dark' | 'auto';  // Override default theme
-  locale?: string;                     // Override default locale
+  locale?: string;                     // Override default locale (use 'auto' for browser detection)
   metadata?: Record<string, any>;      // Custom metadata to attach
 });
 ```

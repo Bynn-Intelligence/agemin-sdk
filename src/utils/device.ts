@@ -21,3 +21,19 @@ export function getDefaultMode(): 'modal' {
   // Always use modal for consistency across devices
   return 'modal';
 }
+
+/**
+ * Get the browser's language
+ */
+export function getBrowserLanguage(): string {
+  if (typeof navigator === 'undefined') return 'en';
+  
+  // Try to get the most specific language first
+  const lang = navigator.language || 
+                (navigator as any).userLanguage || 
+                (navigator.languages && navigator.languages[0]) || 
+                'en';
+  
+  // Return the language code (e.g., 'en-US' -> 'en')
+  return lang.split('-')[0].toLowerCase();
+}

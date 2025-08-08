@@ -12,7 +12,7 @@ import {
   parseMessage, 
   isTrustedOrigin 
 } from '../utils/dom';
-import { getDefaultMode, isSupported } from '../utils/device';
+import { getDefaultMode, isSupported, getBrowserLanguage } from '../utils/device';
 
 export class Agemin {
   private config: Required<AgeminConfig>;
@@ -204,11 +204,17 @@ export class Agemin {
   }
   
   private buildVerificationUrl(sessionId: string, options: VerifyOptions): string {
+    // Resolve locale - if 'auto', detect browser language
+    let locale = options.locale || this.config.locale;
+    if (locale === 'auto') {
+      locale = getBrowserLanguage();
+    }
+    
     const params: Record<string, any> = {
       asset_id: this.config.assetId,
       session_id: sessionId,
       theme: options.theme || this.config.theme,
-      locale: options.locale || this.config.locale,
+      locale: locale,
       mode: 'embedded',
       sdk_version: SDK_VERSION
     };

@@ -50,7 +50,8 @@ export interface AgeminConfig {
   
   /**
    * Locale for the verification interface
-   * @default 'en'
+   * Use 'auto' to detect browser language automatically
+   * @default 'auto'
    */
   locale?: string;
   
