@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2024-01-08
+
+### Added
+- Event listeners for app-to-SDK communication
+  - `onAppReady()` - Called when embedded app is ready
+  - `onProgress()` - Receive real-time progress updates during verification
+  - `onStateChange()` - Track app state transitions
+  - `onUserAction()` - Monitor user interactions within the app
+- New message types for bidirectional communication
+- Support for iframe-aware app behavior
+- Internal `verificationURL` parameter for development (uses `{sessionId}` placeholder)
+
+### Changed
+- Verification URL now includes sessionId in path instead of query parameter
+- Default URL structure changed from `verify.agemin.com?session_id=X` to `verify.agemin.com/X`
+
+### Enhanced
+- App now detects if running in iframe and adapts behavior
+- Close buttons automatically hidden when embedded in SDK
+- Navigation actions converted to signals when in iframe mode
+- Real-time progress tracking during face scanning
+
 ## [3.0.2] - 2024-01-08
 
 ### Changed

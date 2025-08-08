@@ -28,6 +28,13 @@ export interface AgeminConfig {
   baseUrl?: string;
   
   /**
+   * Custom verification URL template (for development)
+   * Use {sessionId} as placeholder for session ID
+   * @internal
+   */
+  verificationURL?: string;
+  
+  /**
    * URL to redirect to on error
    */
   errorUrl?: string | null;

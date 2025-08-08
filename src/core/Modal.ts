@@ -108,4 +108,17 @@ export class Modal {
   isOpen(): boolean {
     return document.getElementById('agemin-iframe') !== null;
   }
+  
+  updateHeight(height: number): void {
+    const modal = document.getElementById('agemin-modal');
+    if (modal) {
+      // Clamp height between min and max
+      const minHeight = 400;
+      const maxHeight = window.innerHeight * 0.9; // 90vh
+      const clampedHeight = Math.min(Math.max(height, minHeight), maxHeight);
+      
+      // Apply the new height with smooth transition
+      modal.style.height = `${clampedHeight}px`;
+    }
+  }
 }

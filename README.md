@@ -84,7 +84,26 @@ const agemin = new Agemin({
   debug: true
 });
 
-// 3. Start verification
+// 3. Optional: Register event listeners for real-time updates
+agemin.onAppReady(() => {
+  console.log('Verification app loaded successfully');
+});
+
+agemin.onProgress((data) => {
+  console.log(`Progress: ${data.percentage}% - ${data.stage}`);
+  // Update your UI with progress information
+});
+
+agemin.onStateChange((data) => {
+  console.log(`State changed from ${data.from} to ${data.to}`);
+});
+
+agemin.onUserAction((data) => {
+  console.log(`User action: ${data.type} on ${data.target}`);
+  // Track user interactions for analytics
+});
+
+// 4. Start verification
 agemin.verify({
   onSuccess: async (result) => {
     // Verification completed - check actual result server-side
@@ -242,6 +261,63 @@ interface VerificationResult {
 ```
 
 **Important**: The `onSuccess` callback only indicates the verification process completed. You MUST verify the actual age verification result server-side using your Private Key.
+
+## Event Listeners
+
+The SDK provides event listeners for real-time updates during the verification process:
+
+### `onAppReady(callback)`
+Called when the verification app has loaded and is ready.
+
+```javascript
+agemin.onAppReady(() => {
+  console.log('App is ready');
+  // Hide loading spinner, enable buttons, etc.
+});
+```
+
+### `onProgress(callback)`
+Receive real-time progress updates during face scanning.
+
+```javascript
+agemin.onProgress((data) => {
+  console.log(`Progress: ${data.percentage}%`);
+  console.log(`Stage: ${data.stage}`);     // e.g., "Hold still", "Move closer"
+  console.log(`Message: ${data.message}`); // e.g., "Capture 3/5"
+  
+  // Update your progress bar
+  updateProgressBar(data.percentage);
+});
+```
+
+### `onStateChange(callback)`
+Track state transitions in the verification flow.
+
+```javascript
+agemin.onStateChange((data) => {
+  console.log(`From: ${data.from}`);
+  console.log(`To: ${data.to}`);
+  console.log(`Data: ${data.data}`);
+  
+  // Handle state-specific logic
+  if (data.to === 'completed') {
+    showSuccessMessage();
+  }
+});
+```
+
+### `onUserAction(callback)`
+Monitor user interactions for analytics or UX improvements.
+
+```javascript
+agemin.onUserAction((data) => {
+  console.log(`Action: ${data.type}`);    // e.g., "cancel", "click"
+  console.log(`Target: ${data.target}`);  // e.g., "consent_page", "face_scan_page"
+  
+  // Track with analytics
+  analytics.track('agemin_user_action', data);
+});
+```
 
 ## API Reference
 

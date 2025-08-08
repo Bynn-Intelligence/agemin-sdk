@@ -26,14 +26,16 @@ export const MODAL_STYLES = {
     position: relative;
     width: 90%;
     max-width: 500px;
-    height: 80%;
-    max-height: 700px;
+    height: auto;
+    min-height: 400px;
+    max-height: 90vh;
     background: white;
     border-radius: 16px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     z-index: 999999;
     animation: agemin-slide-up 0.3s ease-out;
+    transition: height 0.3s ease-out;
   `,
   closeButton: `
     position: absolute;
