@@ -27,9 +27,21 @@ npm install @bynn-intelligence/agemin-sdk
 yarn add @bynn-intelligence/agemin-sdk
 ```
 
+### pnpm
+```bash
+pnpm add @bynn-intelligence/agemin-sdk
+```
+
 ### CDN
 ```html
+<!-- Latest version -->
 <script src="https://unpkg.com/@bynn-intelligence/agemin-sdk/dist/agemin-sdk.umd.js"></script>
+
+<!-- Specific version -->
+<script src="https://unpkg.com/@bynn-intelligence/agemin-sdk@2.0.1/dist/agemin-sdk.umd.js"></script>
+
+<!-- Minified version -->
+<script src="https://unpkg.com/@bynn-intelligence/agemin-sdk/dist/agemin-sdk.min.js"></script>
 ```
 
 ## Quick Start
@@ -64,7 +76,7 @@ agemin.verify({
 You can configure the SDK directly in HTML using data attributes:
 
 ```html
-<script src="https://unpkg.com/@bynn-intelligence/agemin-sdk/dist/agemin-sdk.umd.js"
+<script src="https://unpkg.com/@bynn-intelligence/agemin-sdk/dist/agemin-sdk.min.js"
   data-agemin-asset-id="your-asset-id"
   data-agemin-theme="auto"
   data-agemin-locale="en"
@@ -340,7 +352,7 @@ The SDK supports all modern browsers:
 
 ```bash
 # Clone the repository
-git clone https://github.com/agemin/agemin-sdk.git
+git clone https://github.com/Bynn-Intelligence/agemin-sdk.git
 cd agemin-sdk
 
 # Install dependencies
@@ -410,7 +422,8 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## Support
 
 - **Documentation**: [https://docs.agemin.com](https://docs.agemin.com)
-- **Issues**: [GitHub Issues](https://github.com/agemin/agemin-sdk/issues)
+- **Issues**: [GitHub Issues](https://github.com/Bynn-Intelligence/agemin-sdk/issues)
+- **npm Package**: [https://www.npmjs.com/package/@bynn-intelligence/agemin-sdk](https://www.npmjs.com/package/@bynn-intelligence/agemin-sdk)
 - **Email**: support@agemin.com
 
 ## Contributing
