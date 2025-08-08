@@ -19,7 +19,7 @@ export const MODAL_STYLES = {
     display: flex;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(20px);
     animation: agemin-fade-in 0.3s ease-out;
   `,
   modal: `
