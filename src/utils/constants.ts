@@ -61,6 +61,55 @@ export const MODAL_STYLES = {
   `
 };
 
+// Mobile-specific styles (fullscreen)
+export const MOBILE_MODAL_STYLES = {
+  overlay: `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background: white;
+    z-index: 999998;
+  `,
+  modal: `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background: white;
+    overflow: hidden;
+    z-index: 999999;
+  `,
+  closeButton: `
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.05);
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 1000001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  `,
+  iframe: `
+    width: 100%;
+    height: 100%;
+    border: none;
+  `
+};
+
 export const ANIMATIONS = `
   @keyframes agemin-fade-in {
     from { opacity: 0; }

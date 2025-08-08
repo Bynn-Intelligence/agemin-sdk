@@ -6,6 +6,30 @@ export function isMobile(): boolean {
 }
 
 /**
+ * Check if the screen is small (mobile-sized)
+ */
+export function isSmallScreen(): boolean {
+  // Multiple checks for better mobile detection
+  
+  // Check viewport width
+  const isNarrowViewport = window.innerWidth < 768;
+  
+  // Check for touch capability
+  const hasTouch = 'ontouchstart' in window || 
+                   navigator.maxTouchPoints > 0 || 
+                   (navigator as any).msMaxTouchPoints > 0;
+  
+  // Check for mobile user agent as fallback
+  const isMobileUA = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  
+  // Check for tablet (wider viewport but still touch)
+  const isTablet = window.innerWidth < 1024 && hasTouch;
+  
+  // Return true if any mobile condition is met
+  return isNarrowViewport || (hasTouch && isMobileUA) || isTablet;
+}
+
+/**
  * Check if the browser supports required features
  */
 export function isSupported(): boolean {

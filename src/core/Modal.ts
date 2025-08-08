@@ -4,9 +4,11 @@ import {
   addStyles
 } from '../utils/dom';
 import { 
-  MODAL_STYLES, 
+  MODAL_STYLES,
+  MOBILE_MODAL_STYLES, 
   ANIMATIONS
 } from '../utils/constants';
+import { isSmallScreen } from '../utils/device';
 
 export class Modal {
   private verificationWindow: HTMLIFrameElement | null = null;
@@ -21,53 +23,84 @@ export class Modal {
   }
   
   openIframe(url: string, onClose?: () => void): void {
+    // Determine if we should use mobile styles (fullscreen)
+    const isMobileView = isSmallScreen();
+    const styles = isMobileView ? MOBILE_MODAL_STYLES : MODAL_STYLES;
+    
     // Create overlay
-    const overlay = createElement('div', { id: 'agemin-overlay' }, MODAL_STYLES.overlay);
+    const overlay = createElement('div', { id: 'agemin-overlay' }, styles.overlay);
     
-    // Create modal container
-    const modal = createElement('div', { id: 'agemin-modal' }, MODAL_STYLES.modal);
-    
-    // Create close button
-    const closeBtn = createElement('button', {}, MODAL_STYLES.closeButton) as HTMLButtonElement;
-    closeBtn.innerHTML = '✕';
-    closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(0, 0, 0, 0.2)';
-    closeBtn.onmouseout = () => closeBtn.style.background = 'rgba(0, 0, 0, 0.1)';
-    closeBtn.onclick = () => {
-      this.close();
-      if (onClose) onClose();
-    };
-    
-    // Create iframe
-    const iframe = createElement('iframe', {
-      id: 'agemin-iframe',
-      src: url,
-      allow: 'camera; microphone'
-    }, MODAL_STYLES.iframe) as HTMLIFrameElement;
-    
-    this.verificationWindow = iframe;
-    
-    // Assemble and add to DOM
-    modal.appendChild(closeBtn);
-    modal.appendChild(iframe);
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-    
-    // Close on overlay click
-    overlay.onclick = (e) => {
-      if (e.target === overlay) {
+    if (isMobileView) {
+      // Mobile: fullscreen mode - overlay is the container
+      // Create close button
+      const closeBtn = createElement('button', { id: 'agemin-close-btn' }, styles.closeButton) as HTMLButtonElement;
+      closeBtn.innerHTML = '✕';
+      closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(0, 0, 0, 0.1)';
+      closeBtn.onmouseout = () => closeBtn.style.background = 'rgba(0, 0, 0, 0.05)';
+      closeBtn.onclick = () => {
         this.close();
         if (onClose) onClose();
-      }
-    };
-    
-    // Close on escape key
-    this.escKeyHandler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      };
+      
+      // Create iframe
+      const iframe = createElement('iframe', {
+        id: 'agemin-iframe',
+        src: url,
+        allow: 'camera; microphone'
+      }, styles.iframe) as HTMLIFrameElement;
+      
+      this.verificationWindow = iframe;
+      
+      // Append directly to overlay for fullscreen
+      overlay.appendChild(iframe);
+      overlay.appendChild(closeBtn); // Close button on top
+      document.body.appendChild(overlay);
+      
+      // Prevent body scroll on mobile
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Desktop: modal in center with overlay background
+      const modal = createElement('div', { id: 'agemin-modal' }, styles.modal);
+      
+      // Create close button
+      const closeBtn = createElement('button', {}, styles.closeButton) as HTMLButtonElement;
+      closeBtn.innerHTML = '✕';
+      closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(0, 0, 0, 0.2)';
+      closeBtn.onmouseout = () => closeBtn.style.background = 'rgba(0, 0, 0, 0.1)';
+      closeBtn.onclick = () => {
         this.close();
         if (onClose) onClose();
-      }
-    };
-    document.addEventListener('keydown', this.escKeyHandler);
+      };
+      
+      // Create iframe
+      const iframe = createElement('iframe', {
+        id: 'agemin-iframe',
+        src: url,
+        allow: 'camera; microphone'
+      }, styles.iframe) as HTMLIFrameElement;
+      
+      this.verificationWindow = iframe;
+      
+      // Assemble modal
+      modal.appendChild(closeBtn);
+      modal.appendChild(iframe);
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+    }
+    
+    // NO overlay click handler - only close via X button or explicit actions
+    // This prevents accidental closures
+    
+    // Close on escape key (desktop only - mobile users can't press escape)
+    if (!isMobileView) {
+      this.escKeyHandler = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          this.close();
+          if (onClose) onClose();
+        }
+      };
+      document.addEventListener('keydown', this.escKeyHandler);
+    }
   }
   
   close(): void {
@@ -92,6 +125,9 @@ export class Modal {
     // Remove iframe overlay
     removeElement('agemin-overlay');
     
+    // Restore body scroll (was disabled on mobile)
+    document.body.style.overflow = '';
+    
     // Remove event listener
     if (this.escKeyHandler) {
       document.removeEventListener('keydown', this.escKeyHandler);
@@ -110,6 +146,11 @@ export class Modal {
   }
   
   updateHeight(height: number): void {
+    // Skip height updates on mobile since it's always fullscreen
+    if (isSmallScreen()) {
+      return;
+    }
+    
     const modal = document.getElementById('agemin-modal');
     if (modal) {
       // Clamp height between min and max
