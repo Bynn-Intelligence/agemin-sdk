@@ -17,7 +17,7 @@ export interface AgeminConfig {
   
   /**
    * Optional metadata to attach to the verification
-   * Maximum 50 bytes (will be JSON stringified)
+   * Maximum 256 bytes (will be JSON stringified)
    */
   metadata?: Record<string, any>;
   

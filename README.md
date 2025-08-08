@@ -80,7 +80,7 @@ const { sessionId } = await response.json();
 const agemin = new Agemin({
   assetId: 'asset_5b08b274353b92f4',  // Your Asset ID from agemin.com/app/websites
   sessionId: sessionId,       // Unique session ID from your backend (max 50 bytes)
-  metadata: { userId: 123 },  // Optional metadata (max 50 bytes when stringified)
+  metadata: { userId: 123 },  // Optional metadata (max 256 bytes when stringified)
   debug: true
 });
 
@@ -194,7 +194,7 @@ const agemin = new Agemin({
   sessionId: string;         // Unique session ID (max 50 bytes, generate server-side)
   
   // Optional
-  metadata?: Record<string, any>;  // Custom metadata (max 50 bytes when stringified)
+  metadata?: Record<string, any>;  // Custom metadata (max 256 bytes when stringified)
   baseUrl?: string;           // Custom verification URL (default: 'https://verify.agemin.com')
   theme?: 'light' | 'dark' | 'auto';  // UI theme (default: 'auto')
   locale?: string;            // Language locale (default: 'en')
@@ -207,7 +207,7 @@ const agemin = new Agemin({
 
 **Size Limits**:
 - `sessionId`: Maximum 50 bytes
-- `metadata`: Maximum 50 bytes when JSON stringified
+- `metadata`: Maximum 256 bytes when JSON stringified
 
 These limits ensure efficient data transmission and prevent abuse.
 

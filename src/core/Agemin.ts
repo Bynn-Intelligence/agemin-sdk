@@ -39,12 +39,12 @@ export class Agemin {
       throw new Error(`Agemin SDK: sessionId exceeds 50 bytes limit (current: ${sessionIdBytes} bytes)`);
     }
     
-    // Validate metadata size if provided (max 50 bytes when stringified)
+    // Validate metadata size if provided (max 256 bytes when stringified)
     if (config.metadata) {
       const metadataString = JSON.stringify(config.metadata);
       const metadataBytes = new TextEncoder().encode(metadataString).length;
-      if (metadataBytes > 50) {
-        throw new Error(`Agemin SDK: metadata exceeds 50 bytes limit when stringified (current: ${metadataBytes} bytes)`);
+      if (metadataBytes > 256) {
+        throw new Error(`Agemin SDK: metadata exceeds 256 bytes limit when stringified (current: ${metadataBytes} bytes)`);
       }
     }
     

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] - 2024-01-08
+
+### Changed
+- Increased metadata size limit from 50 bytes to 256 bytes
+- Updated Asset ID documentation to reference correct location (agemin.com/app/websites)
+
 ## [3.0.0] - 2024-01-08
 
 ### Breaking Changes
@@ -17,10 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Required `sessionId` parameter in constructor for secure session tracking
-- Optional `metadata` parameter in constructor (max 50 bytes when stringified)
+- Optional `metadata` parameter in constructor (max 256 bytes when stringified)
 - Server-side verification requirement using Private Key
 - Comprehensive security documentation
-- Size validation for sessionId (max 50 bytes) and metadata (max 50 bytes)
+- Size validation for sessionId (max 50 bytes) and metadata (max 256 bytes)
 
 ### Changed
 - Verification results must now be fetched server-side using Private Key
