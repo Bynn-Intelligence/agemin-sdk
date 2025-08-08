@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agemin SDK - Advanced Example</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f5f7fa;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 32px;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 40px;
+      font-size: 18px;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    
+    .card h2 {
+      font-size: 20px;
+      margin-bottom: 16px;
+      color: #333;
+    }
+    
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: #555;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    .btn {
+      flex: 1;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-secondary {
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+    
+    .btn-secondary:hover {
+      background: #f8f9ff;
+    }
+    
+    .status {
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 20px;
+      font-size: 14px;
+      display: none;
+    }
+    
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    
+    .logs {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 16px;
+      border-radius: 6px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 20px;
+    }
+    
+    .log-entry {
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+    
+    .log-time {
+      color: #858585;
+      margin-right: 8px;
+    }
+    
+    .log-success {
+      color: #4ec9b0;
+    }
+    
+    .log-error {
+      color: #f48771;
+    }
+    
+    .log-info {
+      color: #9cdcfe;
+    }
+    
+    .metadata-input {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    
+    .metadata-input input:first-child {
+      flex: 1;
+    }
+    
+    .metadata-input input:last-child {
+      flex: 2;
+    }
+    
+    .remove-btn {
+      padding: 10px 15px;
+      background: #ff4444;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    .remove-btn:hover {
+      background: #cc0000;
+    }
+    
+    .add-btn {
+      padding: 8px 16px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    
+    .add-btn:hover {
+      background: #218838;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Agemin SDK Advanced Example</h1>
+    <p class="subtitle">Configure and test different SDK options</p>
+    
+    <div class="card">
+      <h2>Configuration</h2>
+      
+      <div class="form-group">
+        <label for="asset-id">Asset ID</label>
+        <input type="text" id="asset-id" value="test-asset-id" placeholder="Enter your asset ID">
+      </div>
+      
+      <div class="form-group">
+        <label for="base-url">Base URL</label>
+        <input type="text" id="base-url" value="http://localhost:5173" placeholder="https://verify.agemin.com">
+      </div>
+      
+      <div class="form-group">
+        <label for="theme">Theme</label>
+        <select id="theme">
+          <option value="auto">Auto</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="locale">Locale</label>
+        <select id="locale">
+          <option value="en">English</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="mode">Verification Mode</label>
+        <select id="mode">
+          <option value="modal">Modal (iframe)</option>
+          <option value="popup">Popup Window</option>
+          <option value="redirect">Redirect</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2>Custom Metadata</h2>
+      <div id="metadata-container">
+        <div class="metadata-input">
+          <input type="text" placeholder="Key" class="metadata-key">
+          <input type="text" placeholder="Value" class="metadata-value">
+        </div>
+      </div>
+      <button class="add-btn" onclick="addMetadataField()">+ Add Field</button>
+    </div>
+    
+    <div class="card">
+      <h2>Actions</h2>
+      
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="initializeSDK()">Initialize SDK</button>
+        <button class="btn btn-primary" onclick="startVerification()">Start Verification</button>
+        <button class="btn btn-secondary" onclick="closeVerification()">Close Modal</button>
+        <button class="btn btn-secondary" onclick="clearLogs()">Clear Logs</button>
+      </div>
+      
+      <div id="status" class="status"></div>
+    </div>
+    
+    <div class="card">
+      <h2>Console Logs</h2>
+      <div id="logs" class="logs">
+        <div class="log-entry">
+          <span class="log-time">[00:00:00]</span>
+          <span class="log-info">Ready to initialize SDK</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Include the SDK -->
+  <script src="../dist/agemin-sdk.umd.js"></script>
+  
+  <script>
+    let agemin = null;
+    
+    function getTimestamp() {
+      const now = new Date();
+      return `[${now.toTimeString().split(' ')[0]}]`;
+    }
+    
+    function addLog(message, type = 'info') {
+      const logsDiv = document.getElementById('logs');
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerHTML = `
+        <span class="log-time">${getTimestamp()}</span>
+        <span class="log-${type}">${message}</span>
+      `;
+      logsDiv.appendChild(entry);
+      logsDiv.scrollTop = logsDiv.scrollHeight;
+    }
+    
+    function showStatus(message, type) {
+      const statusDiv = document.getElementById('status');
+      statusDiv.textContent = message;
+      statusDiv.className = 'status ' + type;
+      statusDiv.style.display = 'block';
+      
+      setTimeout(() => {
+        statusDiv.style.display = 'none';
+      }, 5000);
+    }
+    
+    function getMetadata() {
+      const metadata = {};
+      const inputs = document.querySelectorAll('#metadata-container .metadata-input');
+      inputs.forEach(input => {
+        const key = input.querySelector('.metadata-key').value;
+        const value = input.querySelector('.metadata-value').value;
+        if (key && value) {
+          metadata[key] = value;
+        }
+      });
+      return metadata;
+    }
+    
+    function addMetadataField() {
+      const container = document.getElementById('metadata-container');
+      const div = document.createElement('div');
+      div.className = 'metadata-input';
+      div.innerHTML = `
+        <input type="text" placeholder="Key" class="metadata-key">
+        <input type="text" placeholder="Value" class="metadata-value">
+        <button class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
+      `;
+      container.appendChild(div);
+    }
+    
+    function initializeSDK() {
+      try {
+        const config = {
+          assetId: document.getElementById('asset-id').value,
+          baseUrl: document.getElementById('base-url').value,
+          theme: document.getElementById('theme').value,
+          locale: document.getElementById('locale').value,
+          debug: true
+        };
+        
+        agemin = new Agemin(config);
+        
+        addLog('SDK initialized successfully', 'success');
+        addLog(`Config: ${JSON.stringify(config, null, 2)}`, 'info');
+        showStatus('SDK initialized successfully', 'success');
+        
+        // Log SDK info
+        addLog(`SDK Version: ${Agemin.version}`, 'info');
+        addLog(`Browser Supported: ${Agemin.isSupported()}`, 'info');
+        
+      } catch (error) {
+        addLog(`Initialization error: ${error.message}`, 'error');
+        showStatus(`Failed to initialize: ${error.message}`, 'error');
+      }
+    }
+    
+    function startVerification() {
+      if (!agemin) {
+        addLog('SDK not initialized. Please initialize first.', 'error');
+        showStatus('Please initialize SDK first', 'error');
+        return;
+      }
+      
+      const mode = document.getElementById('mode').value;
+      const metadata = getMetadata();
+      
+      addLog(`Starting verification with mode: ${mode}`, 'info');
+      addLog(`Metadata: ${JSON.stringify(metadata)}`, 'info');
+      
+      try {
+        const sessionId = agemin.verify({
+          mode: mode,
+          metadata: metadata,
+          onSuccess: (data) => {
+            addLog(`Verification successful: ${JSON.stringify(data)}`, 'success');
+            showStatus('Verification successful!', 'success');
+          },
+          onError: (error) => {
+            addLog(`Verification error: ${JSON.stringify(error)}`, 'error');
+            showStatus(`Verification failed: ${error.message}`, 'error');
+          },
+          onCancel: () => {
+            addLog('Verification cancelled by user', 'info');
+            showStatus('Verification cancelled', 'info');
+          },
+          onClose: () => {
+            addLog('Verification modal closed', 'info');
+          }
+        });
+        
+        addLog(`Verification started with session ID: ${sessionId}`, 'success');
+        
+      } catch (error) {
+        addLog(`Failed to start verification: ${error.message}`, 'error');
+        showStatus(`Failed to start: ${error.message}`, 'error');
+      }
+    }
+    
+    function closeVerification() {
+      if (!agemin) {
+        addLog('SDK not initialized', 'error');
+        return;
+      }
+      
+      if (agemin.isOpen()) {
+        agemin.close();
+        addLog('Verification modal closed programmatically', 'info');
+        showStatus('Modal closed', 'info');
+      } else {
+        addLog('No verification modal is currently open', 'info');
+        showStatus('No modal to close', 'info');
+      }
+    }
+    
+    function clearLogs() {
+      const logsDiv = document.getElementById('logs');
+      logsDiv.innerHTML = `
+        <div class="log-entry">
+          <span class="log-time">${getTimestamp()}</span>
+          <span class="log-info">Logs cleared</span>
+        </div>
+      `;
+    }
+    
+    // Auto-initialize on load with default config
+    window.addEventListener('load', () => {
+      addLog('Page loaded. You can initialize the SDK with your configuration.', 'info');
+    });
+  </script>
+</body>
+</html>

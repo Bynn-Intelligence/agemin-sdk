@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agemin SDK - Auto-Initialization Example</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+      background-size: 400% 400%;
+      animation: gradient 15s ease infinite;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    @keyframes gradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+      padding: 50px;
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 32px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 18px;
+      line-height: 1.6;
+    }
+    
+    .code-block {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: left;
+      margin: 30px 0;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
+      overflow-x: auto;
+    }
+    
+    .code-comment {
+      color: #6a9955;
+    }
+    
+    .code-string {
+      color: #ce9178;
+    }
+    
+    .code-attr {
+      color: #9cdcfe;
+    }
+    
+    .verify-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      font-size: 18px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+      margin: 20px 0;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .verify-btn:before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+    
+    .verify-btn:hover:before {
+      width: 300px;
+      height: 300px;
+    }
+    
+    .verify-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 20px 40px rgba(102, 126, 234, 0.4);
+    }
+    
+    .features {
+      margin-top: 40px;
+      text-align: left;
+    }
+    
+    .feature {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: rgba(102, 126, 234, 0.1);
+      border-radius: 8px;
+    }
+    
+    .feature-icon {
+      width: 30px;
+      height: 30px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 15px;
+      color: white;
+      font-weight: bold;
+    }
+    
+    .feature-text {
+      color: #555;
+      font-size: 15px;
+    }
+    
+    .status-message {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      display: none;
+      animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .status-message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .status-message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Auto-Initialization Example</h1>
+    <p class="subtitle">
+      This example demonstrates automatic SDK initialization using data attributes on the script tag.
+      The SDK is configured without any JavaScript code!
+    </p>
+    
+    <div class="code-block">
+      <span class="code-comment"><!-- Include SDK with configuration attributes --></span><br>
+      &lt;<span class="code-attr">script</span> <span class="code-attr">src</span>=<span class="code-string">"agemin-sdk.js"</span><br>
+      &nbsp;&nbsp;<span class="code-attr">data-agemin-asset-id</span>=<span class="code-string">"test-asset-id"</span><br>
+      &nbsp;&nbsp;<span class="code-attr">data-agemin-theme</span>=<span class="code-string">"auto"</span><br>
+      &nbsp;&nbsp;<span class="code-attr">data-agemin-locale</span>=<span class="code-string">"en"</span><br>
+      &nbsp;&nbsp;<span class="code-attr">data-agemin-debug</span>=<span class="code-string">"true"</span>&gt;<br>
+      &lt;/<span class="code-attr">script</span>&gt;
+    </div>
+    
+    <button data-agemin-trigger class="verify-btn">
+      Verify My Age
+    </button>
+    
+    <div id="status" class="status-message"></div>
+    
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">✨</div>
+        <div class="feature-text">Zero configuration required</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🚀</div>
+        <div class="feature-text">Automatic initialization on page load</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🎯</div>
+        <div class="feature-text">Auto-binds to elements with data-agemin-trigger</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔧</div>
+        <div class="feature-text">Configure everything via HTML attributes</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Include the SDK with auto-initialization attributes -->
+  <script src="../dist/agemin-sdk.umd.js"
+    data-agemin-asset-id="test-asset-id"
+    data-agemin-theme="auto"
+    data-agemin-locale="en"
+    data-agemin-debug="true">
+  </script>
+  
+  <script>
+    // The SDK is automatically initialized!
+    // We can still add custom handlers if needed
+    
+    function showStatus(message, type) {
+      const statusDiv = document.getElementById('status');
+      statusDiv.textContent = message;
+      statusDiv.className = 'status-message ' + type;
+      statusDiv.style.display = 'block';
+      
+      setTimeout(() => {
+        statusDiv.style.display = 'none';
+      }, 5000);
+    }
+    
+    // Wait for SDK to be ready
+    window.addEventListener('load', () => {
+      if (window.agemin) {
+        console.log('SDK auto-initialized successfully!');
+        console.log('SDK version:', window.agemin.constructor.version);
+        
+        // We can override the default behavior if needed
+        const originalVerify = window.agemin.verify.bind(window.agemin);
+        window.agemin.verify = function(options = {}) {
+          showStatus('Starting verification...', 'success');
+          
+          // Add custom callbacks
+          const customOptions = {
+            ...options,
+            onSuccess: (data) => {
+              showStatus('✅ Age verification successful!', 'success');
+              console.log('Success data:', data);
+              if (options.onSuccess) options.onSuccess(data);
+            },
+            onError: (error) => {
+              showStatus('❌ Verification failed: ' + error.message, 'error');
+              console.error('Error:', error);
+              if (options.onError) options.onError(error);
+            },
+            onCancel: () => {
+              showStatus('Verification cancelled', 'error');
+              if (options.onCancel) options.onCancel();
+            }
+          };
+          
+          return originalVerify(customOptions);
+        };
+      }
+    });
+  </script>
+</body>
+</html>

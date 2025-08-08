@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agemin SDK - Basic Example</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 40px;
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    
+    p {
+      color: #666;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+    
+    .btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-weight: 600;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .result {
+      margin-top: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      display: none;
+    }
+    
+    .result.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .result.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .result.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    
+    code {
+      background: rgba(0, 0, 0, 0.1);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Agemin SDK Example</h1>
+    <p>Click the button below to start the age verification process. This example demonstrates the basic SDK integration.</p>
+    
+    <button id="verify-btn" class="btn">Verify My Age</button>
+    
+    <div id="result" class="result"></div>
+  </div>
+
+  <!-- Include the SDK -->
+  <script src="../dist/agemin-sdk.umd.js"></script>
+  
+  <script>
+    // Initialize the SDK
+    const agemin = new Agemin({
+      assetId: 'test-asset-id', // Replace with your actual asset ID
+      baseUrl: 'http://localhost:5173', // Point to local Agemin app for testing
+      debug: true
+    });
+    
+    // Function to show result
+    function showResult(message, type) {
+      const resultDiv = document.getElementById('result');
+      resultDiv.textContent = message;
+      resultDiv.className = 'result ' + type;
+      resultDiv.style.display = 'block';
+    }
+    
+    // Handle button click
+    document.getElementById('verify-btn').addEventListener('click', () => {
+      showResult('Starting verification...', 'info');
+      
+      // Start verification
+      const sessionId = agemin.verify({
+        mode: 'modal', // Can be 'modal', 'popup', or 'redirect'
+        metadata: {
+          source: 'basic-example',
+          timestamp: Date.now()
+        },
+        onSuccess: (data) => {
+          console.log('Verification successful:', data);
+          showResult(`✅ Verification successful! Session: ${data.sessionId}`, 'success');
+        },
+        onError: (error) => {
+          console.error('Verification error:', error);
+          showResult(`❌ Verification failed: ${error.message}`, 'error');
+        },
+        onCancel: () => {
+          console.log('Verification cancelled');
+          showResult('Verification was cancelled', 'info');
+        },
+        onClose: () => {
+          console.log('Modal closed');
+        }
+      });
+      
+      console.log('Started verification with session ID:', sessionId);
+    });
+    
+    // Log SDK version
+    console.log('Agemin SDK version:', Agemin.version);
+    console.log('Browser supported:', Agemin.isSupported());
+  </script>
+</body>
+</html>

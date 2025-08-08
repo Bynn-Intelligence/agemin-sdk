@@ -1,0 +1,47 @@
+{
+  "name": "@bynn-intelligence/agemin-sdk",
+  "version": "2.0.1",
+  "description": "agemi.com SDK for age verification",
+  "main": "dist/agemin-sdk.cjs.js",
+  "module": "dist/agemin-sdk.esm.js",
+  "browser": "dist/agemin-sdk.umd.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "rollup -c -w",
+    "build": "rollup -c",
+    "build:types": "tsc --emitDeclarationOnly",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "agemin",
+    "age-verification",
+    "sdk",
+    "identity"
+  ],
+  "author": "Agemin",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.2",
+    "@rollup/plugin-node-resolve": "^16.0.0",
+    "@rollup/plugin-replace": "^6.0.2",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.1.2",
+    "@types/node": "^22.10.6",
+    "rollup": "^4.29.1",
+    "tslib": "^2.8.1",
+    "typescript": "^5.8.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agemin/agemin-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/agemin/agemin-sdk/issues"
+  },
+  "homepage": "https://agemin.com"
+}
