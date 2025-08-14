@@ -9,11 +9,11 @@ export interface AgeminConfig {
   assetId: string;
   
   /**
-   * Unique session ID for this verification request
+   * Unique reference ID for this verification request
    * Should be generated server-side for security
    * Maximum 50 bytes
    */
-  sessionId: string;
+  referenceId: string;
   
   /**
    * Optional metadata to attach to the verification
@@ -117,10 +117,10 @@ export interface VerifyOptions {
 
 export interface VerificationResult {
   /**
-   * Unique session ID for this verification
+   * Unique reference ID for this verification
    * Use this to fetch actual results server-side
    */
-  sessionId: string;
+  referenceId: string;
   
   /**
    * Indicates verification process completed successfully

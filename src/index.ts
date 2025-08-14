@@ -17,7 +17,7 @@ if (typeof document !== 'undefined') {
     if (script) {
       const config = {
         assetId: script.getAttribute('data-agemin-asset-id')!,
-        sessionId: script.getAttribute('data-agemin-session-id')!,
+        referenceId: script.getAttribute('data-agemin-reference-id')!,
         errorUrl: script.getAttribute('data-agemin-error-url') || undefined,
         successUrl: script.getAttribute('data-agemin-success-url') || undefined,
         cancelUrl: script.getAttribute('data-agemin-cancel-url') || undefined,
@@ -26,9 +26,9 @@ if (typeof document !== 'undefined') {
         debug: script.getAttribute('data-agemin-debug') === 'true'
       };
       
-      // Check if sessionId is present
-      if (!config.sessionId) {
-        console.error('Agemin SDK: data-agemin-session-id is required for auto-initialization');
+      // Check if referenceId is present
+      if (!config.referenceId) {
+        console.error('Agemin SDK: data-agemin-reference-id is required for auto-initialization');
         return;
       }
       

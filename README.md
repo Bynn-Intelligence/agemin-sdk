@@ -32,8 +32,8 @@ A secure, type-safe JavaScript/TypeScript SDK for integrating Agemin age verific
 3. **Get your Private Key** at [agemin.com/app/api-keys](https://agemin.com/app/api-keys)
    - Keep this secure on your backend only
 4. **Install the SDK** using your preferred package manager
-5. **Generate session IDs** server-side for each verification
-6. **Initialize SDK** with Asset ID and Session ID
+5. **Generate reference IDs** server-side for each verification
+6. **Initialize SDK** with Asset ID and Reference ID
 7. **Verify results** server-side using your Private Key
 
 ## Installation
@@ -72,15 +72,15 @@ pnpm add @bynn-intelligence/agemin-sdk
 ```javascript
 import Agemin from '@bynn-intelligence/agemin-sdk';
 
-// 1. Get session ID from your backend
-const response = await fetch('/api/agemin/session', { method: 'POST' });
-const { sessionId } = await response.json();
+// 1. Get reference ID from your backend
+const response = await fetch('/api/agemin/reference', { method: 'POST' });
+const { referenceId } = await response.json();
 
-// 2. Initialize SDK with Asset ID and Session ID
+// 2. Initialize SDK with Asset ID and Reference ID
 const agemin = new Agemin({
-  assetId: 'asset_5b08b274353b92f4',  // Your Asset ID from agemin.com/app/websites
-  sessionId: sessionId,       // Unique session ID from your backend (max 50 bytes)
-  metadata: { userId: 123 },  // Optional metadata (max 256 bytes when stringified)
+  assetId: 'ast_5b08b274353b92f4',    // Your Asset ID from agemin.com/app/websites
+  referenceId: referenceId,           // Unique reference ID from your backend (max 50 bytes)
+  metadata: { userId: 123 },          // Optional metadata (max 256 bytes when stringified)
   debug: true
 });
 
@@ -107,13 +107,13 @@ agemin.onUserAction((data) => {
 agemin.verify({
   onSuccess: async (result) => {
     // Verification completed - check actual result server-side
-    console.log('Verification completed:', result.sessionId);
+    console.log('Verification completed:', result.referenceId);
     
     // 4. Verify the actual result on your backend
     const verifyResponse = await fetch('/api/agemin/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId: result.sessionId })
+      body: JSON.stringify({ referenceId: result.referenceId })
     });
     
     const { verified, age } = await verifyResponse.json();
@@ -139,27 +139,27 @@ agemin.verify({
 ### Backend Implementation (Node.js Example)
 
 ```javascript
-// Generate session endpoint
-app.post('/api/agemin/session', (req, res) => {
-  // Generate unique session ID
-  const sessionId = crypto.randomUUID();
+// Generate reference endpoint
+app.post('/api/agemin/reference', (req, res) => {
+  // Generate unique reference ID
+  const referenceId = crypto.randomUUID();
   
-  // Store session in database with user context
-  await db.sessions.create({
-    id: sessionId,
+  // Store reference in database with user context
+  await db.references.create({
+    id: referenceId,
     userId: req.user?.id,
     createdAt: new Date()
   });
   
-  res.json({ sessionId });
+  res.json({ referenceId });
 });
 
 // Verify result endpoint
 app.post('/api/agemin/verify', async (req, res) => {
-  const { sessionId } = req.body;
+  const { referenceId } = req.body;
   
   // Fetch verification result from Agemin API using Private Key
-  const result = await fetch(`https://api.agemin.com/v1/agemin/result?sessionId=${sessionId}`, {
+  const result = await fetch(`https://api.agemin.com/v1/agemin/result?referenceId=${referenceId}`, {
     headers: {
       'Authorization': `Bearer ${process.env.AGEMIN_PRIVATE_KEY}` // Private key from agemin.com/app/api-keys
     }
@@ -170,8 +170,8 @@ app.post('/api/agemin/verify', async (req, res) => {
   // Check if user meets age requirement
   const verified = verification.status === 'verified';
   
-  // Update session in database
-  await db.sessions.update(sessionId, {
+  // Update reference in database
+  await db.references.update(referenceId, {
     verified,
     completedAt: new Date()
   });
@@ -189,8 +189,8 @@ You can configure the SDK directly in HTML using data attributes:
 
 ```html
 <script src="https://unpkg.com/@bynn-intelligence/agemin-sdk/dist/agemin-sdk.min.js"
-  data-agemin-asset-id="asset_5b08b274353b92f4"
-  data-agemin-session-id="unique-session-id"
+  data-agemin-asset-id="ast_5b08b274353b92f4"
+  data-agemin-reference-id="unique-reference-id"
   data-agemin-theme="auto"
   data-agemin-locale="en"
   data-agemin-debug="true">
@@ -200,7 +200,7 @@ You can configure the SDK directly in HTML using data attributes:
 <button data-agemin-trigger>Verify My Age</button>
 ```
 
-**Note**: The session ID must be generated server-side and injected into the HTML for security.
+**Note**: The reference ID must be generated server-side and injected into the HTML for security.
 
 ## Configuration Options
 
@@ -209,8 +209,8 @@ You can configure the SDK directly in HTML using data attributes:
 ```typescript
 const agemin = new Agemin({
   // Required
-  assetId: string;           // Your Asset ID from agemin.com/app/websites (e.g., 'asset_5b08b274353b92f4')
-  sessionId: string;         // Unique session ID (max 50 bytes, generate server-side)
+  assetId: string;           // Your Asset ID from agemin.com/app/websites (e.g., 'ast_5b08b274353b92f4')
+  referenceId: string;       // Unique reference ID (max 50 bytes, generate server-side)
   
   // Optional
   metadata?: Record<string, any>;  // Custom metadata (max 256 bytes when stringified)
@@ -225,7 +225,7 @@ const agemin = new Agemin({
 ```
 
 **Size Limits**:
-- `sessionId`: Maximum 50 bytes
+- `referenceId`: Maximum 50 bytes
 - `metadata`: Maximum 256 bytes when JSON stringified
 
 These limits ensure efficient data transmission and prevent abuse.
@@ -254,9 +254,9 @@ agemin.verify({
 
 ```typescript
 interface VerificationResult {
-  sessionId: string;   // Session ID to verify on backend
-  completed: boolean;  // Verification process completed
-  timestamp: number;   // Completion timestamp
+  referenceId: string;  // Reference ID to verify on backend
+  completed: boolean;   // Verification process completed
+  timestamp: number;    // Completion timestamp
 }
 ```
 
@@ -324,7 +324,7 @@ agemin.onUserAction((data) => {
 ### Methods
 
 #### `verify(options?: VerifyOptions): string`
-Starts the verification process. Returns a unique session ID.
+Starts the verification process. Returns the reference ID.
 
 #### `close(): void`
 Programmatically closes the verification modal/popup.
@@ -332,8 +332,8 @@ Programmatically closes the verification modal/popup.
 #### `isOpen(): boolean`
 Checks if a verification session is currently active.
 
-#### `getSession(): Session | null`
-Returns the current verification session object.
+#### `getReferenceId(): string`
+Returns the reference ID for the current verification.
 
 ### Static Methods
 

@@ -29,14 +29,14 @@ export class Agemin {
       throw new Error('Agemin SDK: assetId is required');
     }
 
-    if (!config.sessionId) {
-      throw new Error('Agemin SDK: Unique sessionId is required. Generally use the id your webserver sets for the session.');
+    if (!config.referenceId) {
+      throw new Error('Agemin SDK: Unique referenceId is required. Generally use the id your webserver sets for the session.');
     }
 
-    // Validate sessionId size (max 50 bytes)
-    const sessionIdBytes = new TextEncoder().encode(config.sessionId).length;
-    if (sessionIdBytes > 50) {
-      throw new Error(`Agemin SDK: sessionId exceeds 50 bytes limit (current: ${sessionIdBytes} bytes)`);
+    // Validate referenceId size (max 50 bytes)
+    const referenceIdBytes = new TextEncoder().encode(config.referenceId).length;
+    if (referenceIdBytes > 50) {
+      throw new Error(`Agemin SDK: referenceId exceeds 50 bytes limit (current: ${referenceIdBytes} bytes)`);
     }
 
     // Validate metadata size if provided (max 256 bytes when stringified)
@@ -85,18 +85,18 @@ export class Agemin {
       onClose: options.onClose
     };
 
-    // Use the sessionId from config
-    const sessionId = this.config.sessionId;
+    // Use the referenceId from config
+    const referenceId = this.config.referenceId;
 
     // Build verification URL
-    const url = this.buildVerificationUrl(sessionId, options);
+    const url = this.buildVerificationUrl(referenceId, options);
 
     // Handle verification based on mode
     const mode = options.mode || getDefaultMode();
 
     if (this.config.debug) {
       console.log('Starting verification', {
-        sessionId,
+        referenceId,
         mode,
         url
       });
@@ -120,7 +120,7 @@ export class Agemin {
       });
     }
 
-    return sessionId;
+    return referenceId;
   }
 
   /**
@@ -132,10 +132,10 @@ export class Agemin {
   }
 
   /**
-   * Get the session ID
+   * Get the reference ID
    */
-  getSessionId(): string {
-    return this.config.sessionId;
+  getReferenceId(): string {
+    return this.config.referenceId;
   }
 
   /**
@@ -227,23 +227,23 @@ export class Agemin {
     });
   }
 
-  private buildVerificationUrl(sessionId: string, options: VerifyOptions): string {
+  private buildVerificationUrl(referenceId: string, options: VerifyOptions): string {
     // Use verificationURL template if provided, otherwise construct from baseUrl
     let baseUrl: string;
 
     if (this.config.verificationURL) {
-      // Check if verificationURL contains {sessionId} placeholder
-      if (this.config.verificationURL.includes('{sessionId}')) {
-        // Replace placeholder with actual sessionId
-        baseUrl = this.config.verificationURL.replace('{sessionId}', sessionId);
+      // Check if verificationURL contains {assetId} placeholder
+      if (this.config.verificationURL.includes('{assetId}')) {
+        // Replace placeholder with actual assetId
+        baseUrl = this.config.verificationURL.replace('{assetId}', this.config.assetId);
       } else {
-        // No placeholder, append sessionId to the URL
+        // No placeholder, append /start/assetId to the URL
         const separator = this.config.verificationURL.endsWith('/') ? '' : '/';
-        baseUrl = `${this.config.verificationURL}${separator}${sessionId}`;
+        baseUrl = `${this.config.verificationURL}${separator}start/${this.config.assetId}`;
       }
     } else {
-      // Default: baseUrl/sessionId
-      baseUrl = `${this.config.baseUrl}/${sessionId}`;
+      // Default: baseUrl/start/assetId
+      baseUrl = `${this.config.baseUrl}/start/${this.config.assetId}`;
     }
 
     // Resolve locale - if 'auto', detect browser language
@@ -253,7 +253,7 @@ export class Agemin {
     }
 
     const params: Record<string, any> = {
-      asset_id: this.config.assetId,
+      reference_id: referenceId,
       theme: options.theme || this.config.theme,
       locale: locale,
       mode: 'embedded',
@@ -282,9 +282,9 @@ export class Agemin {
       console.log('Agemin SDK: Verification process completed', data);
     }
 
-    // Create result with only sessionId and completed status
+    // Create result with only referenceId and completed status
     const result: VerificationResult = {
-      sessionId: this.config.sessionId,
+      referenceId: this.config.referenceId,
       completed: true,
       timestamp: Date.now()
     };
