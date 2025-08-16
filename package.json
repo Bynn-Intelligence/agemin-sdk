@@ -1,6 +1,6 @@
 {
   "name": "@bynn-intelligence/agemin-sdk",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "description": "agemin.com SDK for age verification",
   "main": "dist/agemin-sdk.cjs.js",
   "module": "dist/agemin-sdk.esm.js",

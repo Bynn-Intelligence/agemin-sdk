@@ -27,6 +27,8 @@ export class Agemin {
     onCancel?: () => void;
     onClose?: () => void;
   } = {};
+  private verificationPromise?: Promise<boolean | string>;
+  private isVerifying: boolean = false;
 
   constructor(config: AgeminConfig) {
     if (!config || !config.assetId) {
@@ -81,6 +83,25 @@ export class Agemin {
    * Start the verification process
    */
   verify(options: VerifyOptions = {}): string {
+    // Check if modal is already open
+    if (this.isOpen()) {
+      if (this.config.debug) {
+        console.log('Agemin SDK: Modal already open, ignoring duplicate verify() call');
+      }
+      return this.config.referenceId;
+    }
+
+    // Check if verification is already in progress
+    if (this.isVerifying) {
+      if (this.config.debug) {
+        console.log('Agemin SDK: Verification already in progress, ignoring duplicate call');
+      }
+      return this.config.referenceId;
+    }
+
+    // Mark verification as in progress
+    this.isVerifying = true;
+
     // Store callbacks
     this.callbacks = {
       onSuccess: options.onSuccess,
@@ -156,6 +177,30 @@ export class Agemin {
    * @returns true if valid session exists, or referenceId if verification was launched
    */
   async validateSession(options?: VerifyOptions): Promise<boolean | string> {
+    // If already validating, return existing promise
+    if (this.verificationPromise) {
+      if (this.config.debug) {
+        console.log('Agemin SDK: Validation already in progress, returning existing promise');
+      }
+      return this.verificationPromise;
+    }
+
+    // Create and store the promise
+    this.verificationPromise = this.doValidateSession(options);
+    
+    try {
+      const result = await this.verificationPromise;
+      return result;
+    } finally {
+      // Clear the promise when done
+      this.verificationPromise = undefined;
+    }
+  }
+
+  /**
+   * Internal method that performs the actual validation
+   */
+  private async doValidateSession(options?: VerifyOptions): Promise<boolean | string> {
     try {
       // Check for existing JWT cookie
       const cookieName = 'agemin_verification';
@@ -349,6 +394,9 @@ export class Agemin {
   }
 
   private async handleSuccess(data: any): Promise<void> {
+    // Reset verification state
+    this.isVerifying = false;
+    
     if (this.config.debug) {
       console.log('Agemin SDK: Verification process completed', data);
     }
@@ -466,6 +514,9 @@ export class Agemin {
   }
 
   private handleError(error: VerificationError): void {
+    // Reset verification state
+    this.isVerifying = false;
+    
     if (this.config.debug) {
       console.error('Agemin SDK: Technical error occurred - consider showing fallback age confirmation', error);
     }
@@ -482,6 +533,9 @@ export class Agemin {
   }
 
   private handleCancel(): void {
+    // Reset verification state
+    this.isVerifying = false;
+    
     if (this.config.debug) {
       console.log('Agemin SDK: Verification cancelled');
     }
