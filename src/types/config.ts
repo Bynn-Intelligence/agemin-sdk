@@ -93,10 +93,22 @@ export interface VerifyOptions {
   
   /**
    * Callback when verification process completes successfully
-   * Note: This does NOT indicate if age requirement was met
-   * You must verify the result server-side using your private key
+   * Note: This indicates the verification process finished, NOT that the user passed
+   * For strong API security, check results server-side with your private key
    */
   onSuccess?: (data: VerificationResult) => void;
+  
+  /**
+   * Callback when user passes age verification (JWT present and is_of_age = true)
+   * Only called when JWT is available and successfully decoded
+   */
+  onAgePass?: (data: VerificationResult) => void;
+  
+  /**
+   * Callback when user fails age verification (JWT present but is_of_age = false)
+   * Only called when JWT is available and successfully decoded
+   */
+  onAgeFail?: (data: VerificationResult) => void;
   
   /**
    * Callback when technical error occurs (API, network, model errors)

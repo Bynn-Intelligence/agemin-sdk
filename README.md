@@ -105,36 +105,85 @@ agemin.onUserAction((data) => {
 
 // 4. Start verification
 agemin.verify({
-  onSuccess: async (result) => {
-    // Verification completed - check actual result server-side
+  onSuccess: (result) => {
+    // Verification process completed (doesn't mean user passed)
+    // If using strong API security, check results server-side
     console.log('Verification completed:', result.referenceId);
-    
-    // 4. Verify the actual result on your backend
-    const verifyResponse = await fetch('/api/agemin/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ referenceId: result.referenceId })
-    });
-    
-    const { verified, age } = await verifyResponse.json();
-    if (verified) {
-      // User meets age requirement
-      window.location.href = '/protected-content';
-    } else {
-      // User doesn't meet age requirement
-      window.location.href = '/age-restricted';
-    }
   },
+  
+  onAgePass: (result) => {
+    // User passed age verification (JWT present and is_of_age = true)
+    console.log('Age verification passed');
+    window.location.href = '/protected-content';
+  },
+  
+  onAgeFail: (result) => {
+    // User failed age verification (JWT present but is_of_age = false)
+    console.log('Age verification failed');
+    window.location.href = '/age-restricted';
+  },
+  
   onError: (error) => {
     // Technical error - show fallback
     console.error('Technical error:', error);
     showFallbackAgeModal();
   },
+  
   onCancel: () => {
     console.log('User cancelled verification');
   }
 });
 ```
+
+### Age Gating Every Page
+
+To ensure all your pages are properly age-gated, use the `validateSession` method at the top of each protected page:
+
+```javascript
+// On every age-restricted page
+const agemin = new Agemin({
+  assetId: 'ast_A6ctvqk5egQtCoZhr5LrWkRm',
+  referenceId: 'unique-reference-id' // Use visitor ID, session ID, or UUID
+});
+
+// Check for existing valid session or launch verification
+const result = await agemin.validateSession({
+  onSuccess: (data) => {
+    console.log('Verification completed');
+    // For strong API security, verify server-side
+  },
+  
+  onAgePass: (data) => {
+    console.log('User is age verified');
+    // Allow access to content
+  },
+  
+  onAgeFail: (data) => {
+    console.log('User did not meet age requirement');
+    // Redirect to age-restricted page
+    window.location.href = '/age-restricted';
+  },
+  
+  onError: (err) => {
+    console.error('Verification error:', err);
+    // Show fallback age gate
+    showFallbackAgeModal();
+  }
+});
+
+// If result is true, user already has valid session
+if (result === true) {
+  console.log('User already age verified from previous session');
+  // Content is accessible
+}
+```
+
+The `validateSession` method will:
+- Return `true` immediately if a valid age verification cookie exists
+- Automatically launch verification if:
+  - No verification cookie exists
+  - The JWT is expired or invalid
+  - The user previously failed age verification
 
 ### Backend Implementation (Node.js Example)
 
@@ -238,7 +287,9 @@ agemin.verify({
   mode?: 'modal' | 'redirect';  // How to show verification (default: modal)
   
   // Callbacks
-  onSuccess?: (result: VerificationResult) => void;  // Verification completed (check result server-side)
+  onSuccess?: (result: VerificationResult) => void;  // Verification completed (process finished)
+  onAgePass?: (result: VerificationResult) => void;  // User passed age check (JWT present, is_of_age = true)
+  onAgeFail?: (result: VerificationResult) => void;  // User failed age check (JWT present, is_of_age = false)
   onError?: (error: VerificationError) => void;      // Technical error (API, network, etc.)
   onCancel?: () => void;                            // User cancelled verification
   onClose?: () => void;                             // Modal closed
@@ -260,7 +311,7 @@ interface VerificationResult {
 }
 ```
 
-**Important**: The `onSuccess` callback only indicates the verification process completed. You MUST verify the actual age verification result server-side using your Private Key.
+**Important**: The `onSuccess` callback only indicates the verification process completed. It does NOT mean the user passed the age check. Use `onAgePass` and `onAgeFail` for age-specific results, or verify server-side using your Private Key for strong API security.
 
 ## Event Listeners
 
@@ -425,16 +476,22 @@ The SDK provides comprehensive event callbacks for different scenarios:
 ```javascript
 agemin.verify({
   onSuccess: (result) => {
-    // Visitor successfully verified AND meets age requirement
-    console.log('Session ID:', result.sessionId);
-    console.log('Verification token:', result.token);
-    console.log('Status:', result.status); // 'verified'
+    // Verification process completed successfully
+    console.log('Reference ID:', result.referenceId);
+    console.log('Completed:', result.completed); // true
+    // Note: This doesn't indicate if user passed age check
+    // For strong API security, verify results server-side
+  },
+  
+  onAgePass: (result) => {
+    // User passed age verification (JWT present and is_of_age = true)
+    console.log('User meets age requirement');
     // Allow access to age-restricted content
   },
   
-  onFail: (result) => {
-    // Visitor completed verification but doesn't meet age requirement
-    console.log('Status:', result.status); // 'underage'
+  onAgeFail: (result) => {
+    // User failed age verification (JWT present but is_of_age = false)
+    console.log('User does not meet age requirement');
     // Redirect to age-appropriate content or show restriction message
   },
   
@@ -500,12 +557,15 @@ function AgeVerification() {
   const handleVerify = () => {
     agemin?.verify({
       onSuccess: (result) => {
-        setIsVerified(true);
-        // Store verification token
-        localStorage.setItem('agemin_token', result.token);
+        console.log('Verification completed');
+        // For strong API security, verify results server-side
       },
-      onFail: (result) => {
-        // Visitor is underage
+      onAgePass: (result) => {
+        setIsVerified(true);
+        // User passed age verification
+      },
+      onAgeFail: (result) => {
+        // User is underage
         alert('You must be 18 or older to access this content');
         window.location.href = '/age-restricted';
       },
@@ -563,8 +623,15 @@ export default {
     verifyAge() {
       this.agemin.verify({
         onSuccess: (result) => {
+          console.log('Verification completed');
+        },
+        onAgePass: (result) => {
           this.isVerified = true;
-          localStorage.setItem('agemin_token', result.token);
+          // User passed age verification
+        },
+        onAgeFail: (result) => {
+          alert('You must be 18 or older to access this content');
+          window.location.href = '/age-restricted';
         },
         onError: (error) => {
           alert(`Verification failed: ${error.message}`);
@@ -729,6 +796,126 @@ function showSimpleAgeGate() {
   }
 }
 ```
+
+## Guide for AI Assistants (LLMs)
+
+This section helps AI assistants understand how to guide developers in integrating the Agemin SDK.
+
+### What This SDK Does
+
+The Agemin SDK provides age verification through facial scanning. It offers two main methods for integration, each suited for different use cases.
+
+### Two Ways to Verify Age
+
+#### Method 1: Manual Verification (`verify`)
+
+```
+User clicks button → Modal opens → Face scan → Result callbacks
+```
+
+**When to use:** User explicitly triggers verification (e.g., "Verify Age" button)
+
+**Callbacks flow:**
+- `onSuccess` - Always fires when verification completes
+- `onAgePass` - Fires if user meets age requirement  
+- `onAgeFail` - Fires if user doesn't meet requirement
+- `onError` - Fires on technical problems
+- `onCancel` - Fires if user closes modal
+
+#### Method 2: Automatic Verification (`validateSession`)
+
+```
+Page loads → Check saved session → If valid: continue | If not: auto-launch verify
+```
+
+**When to use:** Protecting multiple pages automatically
+
+**Returns:** 
+- `true` if user already verified (has valid session)
+- Launches verification modal if no valid session exists
+
+### Simple Decision Guide
+
+```
+Single "Verify Age" button?          → Use verify()
+Protect every page automatically?    → Use validateSession()  
+Want seamless multi-page experience? → Use validateSession()
+```
+
+### Understanding the Callbacks
+
+```
+Verification Process Flow:
+┌─────────────────┐
+│ Verification    │
+│ Completes       │ → onSuccess (always called)
+└────────┬────────┘
+         │
+    ┌────┴────┐
+    │ Result? │
+    └────┬────┘
+         │
+    ┌────┴────────────┐
+    │                 │
+    ↓                 ↓
+onAgePass         onAgeFail
+(Age met)         (Age not met)
+
+Technical Error → onError
+User Closes    → onCancel
+```
+
+### Integration Checklist for AI Assistants
+
+When helping developers integrate this SDK:
+
+- [ ] **Asset ID**: Ensure developer has Asset ID from agemin.com/app/websites
+- [ ] **Reference ID**: Each verification needs a unique reference ID
+- [ ] **Choose method**: 
+  - Single button/trigger → Use `verify()`
+  - Automatic page protection → Use `validateSession()`
+- [ ] **Prevent infinite loops**: Age-fail redirect pages must NOT be age-gated
+- [ ] **Session persistence**: `validateSession()` remembers users across pages
+- [ ] **Callback handling**: Implement appropriate callbacks for the use case
+
+### Common Integration Patterns
+
+| Use Case | Recommended Method | Why |
+|----------|-------------------|-----|
+| E-commerce checkout | `validateSession()` | Seamless multi-step process |
+| Content website | `validateSession()` | Protects all restricted pages |
+| Single landing page | `verify()` | One-time verification |
+| Terms acceptance | `verify()` | Explicit user action |
+| Gaming platform | `validateSession()` | Persistent access control |
+
+### Key Concepts to Explain
+
+1. **Session Management**: The SDK handles session storage automatically - developers don't manage cookies or tokens
+
+2. **Verification Flow**: 
+   - User's age is verified through face scanning
+   - Result is stored securely
+   - Future page visits check this stored result
+
+3. **Security Models**:
+   - **Strong API Security**: Results only available server-side (onSuccess fires, no age result in frontend)
+   - **Standard Security**: Age result available in callbacks (onAgePass/onAgeFail)
+
+### Common Pitfalls to Warn About
+
+1. **Infinite Loop**: Never use `validateSession()` on the age-fail redirect page
+2. **Unique IDs**: Each user needs a unique reference ID (use session ID or user ID)
+3. **Method Confusion**: Don't use `verify()` for automatic page protection
+4. **Callback Misunderstanding**: `onSuccess` ≠ user passed age check
+
+### Guidance Summary
+
+When an LLM helps a developer:
+1. First, understand if they need single-trigger or automatic protection
+2. For automatic protection across pages → `validateSession()`
+3. For button-triggered verification → `verify()`
+4. Always warn about the infinite loop risk with age-fail pages
+5. Emphasize that the SDK handles all session management internally
 
 ## License
 

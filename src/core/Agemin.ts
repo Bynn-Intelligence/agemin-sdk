@@ -21,6 +21,8 @@ export class Agemin {
   private modal: Modal;
   private callbacks: {
     onSuccess?: (data: VerificationResult) => void;
+    onAgePass?: (data: VerificationResult) => void;
+    onAgeFail?: (data: VerificationResult) => void;
     onError?: (error: VerificationError) => void;
     onCancel?: () => void;
     onClose?: () => void;
@@ -82,6 +84,8 @@ export class Agemin {
     // Store callbacks
     this.callbacks = {
       onSuccess: options.onSuccess,
+      onAgePass: options.onAgePass,
+      onAgeFail: options.onAgeFail,
       onError: options.onError,
       onCancel: options.onCancel,
       onClose: options.onClose
@@ -349,7 +353,7 @@ export class Agemin {
       console.log('Agemin SDK: Verification process completed', data);
     }
 
-    let isOfAge = false;
+    let isOfAge: boolean | null = null; // null means no JWT to determine age
 
     if (this.config.debug) {
       console.log('Agemin SDK: Checking for JWT in data:', { hasJWT: !!data?.jwt, dataKeys: Object.keys(data || {}) });
@@ -422,32 +426,41 @@ export class Agemin {
 
     this.close();
 
-    // Call the appropriate callback based on is_of_age
-    if (isOfAge) {
+    // Always call onSuccess first (verification process completed)
+    if (this.callbacks.onSuccess) {
       if (this.config.debug) {
-        console.log('Agemin SDK: User is of age, calling onSuccess');
+        console.log('Agemin SDK: Calling onSuccess (verification completed)');
       }
-      if (this.callbacks.onSuccess) {
-        this.callbacks.onSuccess(result);
+      this.callbacks.onSuccess(result);
+    }
+
+    // If JWT was present and decoded, call age-specific callbacks
+    if (isOfAge !== null) {
+      if (isOfAge === true) {
+        if (this.config.debug) {
+          console.log('Agemin SDK: User is of age, calling onAgePass');
+        }
+        if (this.callbacks.onAgePass) {
+          this.callbacks.onAgePass(result);
+        }
+      } else {
+        if (this.config.debug) {
+          console.log('Agemin SDK: User is not of age, calling onAgeFail');
+        }
+        if (this.callbacks.onAgeFail) {
+          this.callbacks.onAgeFail(result);
+        }
       }
     } else {
       if (this.config.debug) {
-        console.log('Agemin SDK: User is not of age, calling onError');
-      }
-      if (this.callbacks.onError) {
-        this.callbacks.onError({
-          code: 'AGE_REQUIREMENT_NOT_MET',
-          message: 'User does not meet the age requirement'
-        });
-      } else {
-        console.warn('Agemin SDK: User does not meet age requirement');
+        console.log('Agemin SDK: No JWT present (strong API security mode) - age result must be checked server-side');
       }
     }
 
-    // Navigate if URLs are configured
-    if (isOfAge && this.config.successUrl) {
+    // Navigate if URLs are configured (only if we know the age result)
+    if (isOfAge === true && this.config.successUrl) {
       window.location.href = this.config.successUrl;
-    } else if (!isOfAge && this.config.errorUrl) {
+    } else if (isOfAge === false && this.config.errorUrl) {
       window.location.href = this.config.errorUrl;
     }
   }
