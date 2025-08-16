@@ -326,6 +326,44 @@ agemin.onUserAction((data) => {
 #### `verify(options?: VerifyOptions): string`
 Starts the verification process. Returns the reference ID.
 
+#### `validateSession(options?: VerifyOptions): Promise<boolean | string>`
+Validates if a user has a valid age verification session stored in cookies. 
+
+- Returns `true` if a valid session exists and the user is of age
+- Automatically launches verification and returns the reference ID if:
+  - No verification cookie exists
+  - The JWT token is expired
+  - The JWT signature is invalid
+  - The user is not of age (`is_of_age: false`)
+
+This method is useful for automatically checking and maintaining age verification across page loads:
+
+```javascript
+// Simple usage - automatically handles everything
+const result = await agemin.validateSession();
+if (result === true) {
+  // User already age verified, allow access
+  console.log('User has valid age verification');
+} else {
+  // Verification was launched, result is the referenceId
+  console.log('Verification launched with ID:', result);
+}
+
+// With callbacks for the verification flow
+const result = await agemin.validateSession({
+  onSuccess: (data) => {
+    console.log('Age verification successful');
+    // User is now verified
+  },
+  onError: (err) => {
+    console.error('Verification error:', err);
+    // Show fallback age gate
+  }
+});
+```
+
+**Note:** This method requires cookies to be enabled. The verification is stored as a JWT in the `agemin_verification` cookie, with the duration controlled by your website's security settings in the Agemin dashboard.
+
 #### `close(): void`
 Programmatically closes the verification modal/popup.
 

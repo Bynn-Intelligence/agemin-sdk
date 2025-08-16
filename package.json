@@ -43,5 +43,8 @@
   "bugs": {
     "url": "https://github.com/Bynn-Intelligence/agemin-sdk/issues"
   },
-  "homepage": "https://agemin.com"
+  "homepage": "https://agemin.com",
+  "dependencies": {
+    "jose": "^6.0.12"
+  }
 }

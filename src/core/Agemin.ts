@@ -13,6 +13,8 @@ import {
   isTrustedOrigin
 } from '../utils/dom';
 import { getDefaultMode, isSupported, getBrowserLanguage } from '../utils/device';
+import { setCookie, getCookie, deleteCookie } from '../utils/cookies';
+import { validateJWT } from '../utils/jwt';
 
 export class Agemin {
   private config: Required<AgeminConfig>;
@@ -143,6 +145,68 @@ export class Agemin {
    */
   isOpen(): boolean {
     return this.modal.isOpen();
+  }
+
+  /**
+   * Validate existing session and launch verification if needed
+   * @returns true if valid session exists, or referenceId if verification was launched
+   */
+  async validateSession(options?: VerifyOptions): Promise<boolean | string> {
+    try {
+      // Check for existing JWT cookie
+      const cookieName = 'agemin_verification';
+      const existingJWT = getCookie(cookieName);
+      
+      if (this.config.debug) {
+        console.log('Agemin SDK: Checking for existing session', { hasJWT: !!existingJWT });
+      }
+      
+      // If no JWT exists, launch verification
+      if (!existingJWT) {
+        if (this.config.debug) {
+          console.log('Agemin SDK: No existing JWT, launching verification');
+        }
+        return this.verify(options);
+      }
+      
+      // Validate the JWT
+      const validationResult = await validateJWT(existingJWT);
+      
+      if (this.config.debug) {
+        console.log('Agemin SDK: JWT validation result', {
+          isValid: validationResult.isValid,
+          isOfAge: validationResult.isOfAge,
+          error: validationResult.error
+        });
+      }
+      
+      // If JWT is valid and user is of age, return true
+      if (validationResult.isValid && validationResult.isOfAge) {
+        if (this.config.debug) {
+          console.log('Agemin SDK: Valid session exists, user is of age');
+        }
+        return true;
+      }
+      
+      // If JWT is invalid, expired, or user is not of age, delete cookie and launch verification
+      if (this.config.debug) {
+        console.log('Agemin SDK: Invalid or expired JWT, or user not of age, launching verification');
+      }
+      
+      // Delete the invalid/expired cookie
+      deleteCookie(cookieName);
+      
+      // Launch verification
+      return this.verify(options);
+      
+    } catch (error) {
+      if (this.config.debug) {
+        console.error('Agemin SDK: Error validating session', error);
+      }
+      
+      // On any error, launch verification as fallback
+      return this.verify(options);
+    }
   }
 
   /**
@@ -280,6 +344,30 @@ export class Agemin {
   private handleSuccess(data: any): void {
     if (this.config.debug) {
       console.log('Agemin SDK: Verification process completed', data);
+    }
+
+    // Store JWT as cookie if provided
+    if (data?.jwt && data?.exp !== undefined) {
+      const cookieName = 'agemin_verification';
+      
+      if (data.exp === null || data.exp === 0) {
+        // Session cookie - no expiration
+        setCookie(cookieName, data.jwt, null);
+        if (this.config.debug) {
+          console.log('Agemin SDK: Stored session JWT cookie');
+        }
+      } else if (data.exp > 0) {
+        // Calculate seconds until expiration
+        const now = Math.floor(Date.now() / 1000);
+        const secondsUntilExpiration = data.exp - now;
+        
+        if (secondsUntilExpiration > 0) {
+          setCookie(cookieName, data.jwt, secondsUntilExpiration);
+          if (this.config.debug) {
+            console.log(`Agemin SDK: Stored JWT cookie, expires in ${secondsUntilExpiration} seconds`);
+          }
+        }
+      }
     }
 
     // Create result with only referenceId and completed status
