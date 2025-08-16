@@ -381,24 +381,30 @@ export class Agemin {
       }
       
       // Store the cookie
-      if (data?.exp !== undefined) {
-        if (data.exp === null || data.exp === 0) {
-          // Session cookie - no expiration
+      if (data?.exp !== undefined && data?.jwt) {
+        const now = Math.floor(Date.now() / 1000);
+        const secondsUntilExpiration = data.exp - now;
+        
+        if (this.config.debug) {
+          console.log(`Agemin SDK: Cookie storage - exp: ${data.exp}, now: ${now}, seconds until exp: ${secondsUntilExpiration}`);
+        }
+        
+        if (data.exp === null || data.exp === 0 || secondsUntilExpiration <= 0) {
+          // Session cookie - no expiration or already expired means session-only
           setCookie(cookieName, data.jwt, null);
           if (this.config.debug) {
-            console.log('Agemin SDK: Stored session JWT cookie');
+            console.log('Agemin SDK: Stored session JWT cookie (session-only)');
           }
-        } else if (data.exp > 0) {
-          // Calculate seconds until expiration
-          const now = Math.floor(Date.now() / 1000);
-          const secondsUntilExpiration = data.exp - now;
-          
-          if (secondsUntilExpiration > 0) {
-            setCookie(cookieName, data.jwt, secondsUntilExpiration);
-            if (this.config.debug) {
-              console.log(`Agemin SDK: Stored JWT cookie, expires in ${secondsUntilExpiration} seconds`);
-            }
+        } else {
+          // Set cookie with expiration
+          setCookie(cookieName, data.jwt, secondsUntilExpiration);
+          if (this.config.debug) {
+            console.log(`Agemin SDK: Stored JWT cookie, expires in ${secondsUntilExpiration} seconds`);
           }
+        }
+      } else {
+        if (this.config.debug) {
+          console.log('Agemin SDK: Not storing cookie - missing exp or jwt');
         }
       }
     } else {
@@ -417,22 +423,25 @@ export class Agemin {
     this.close();
 
     // Call the appropriate callback based on is_of_age
-    if (isOfAge && this.callbacks.onSuccess) {
+    if (isOfAge) {
       if (this.config.debug) {
         console.log('Agemin SDK: User is of age, calling onSuccess');
       }
-      this.callbacks.onSuccess(result);
-    } else if (!isOfAge && this.callbacks.onError) {
+      if (this.callbacks.onSuccess) {
+        this.callbacks.onSuccess(result);
+      }
+    } else {
       if (this.config.debug) {
         console.log('Agemin SDK: User is not of age, calling onError');
       }
-      this.callbacks.onError({
-        code: 'AGE_REQUIREMENT_NOT_MET',
-        message: 'User does not meet the age requirement'
-      });
-    } else if (!isOfAge) {
-      // If no onError callback but user failed, still need to handle it
-      console.warn('Agemin SDK: User does not meet age requirement');
+      if (this.callbacks.onError) {
+        this.callbacks.onError({
+          code: 'AGE_REQUIREMENT_NOT_MET',
+          message: 'User does not meet the age requirement'
+        });
+      } else {
+        console.warn('Agemin SDK: User does not meet age requirement');
+      }
     }
 
     // Navigate if URLs are configured
