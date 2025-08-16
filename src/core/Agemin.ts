@@ -17,6 +17,12 @@ import { setCookie, getCookie, deleteCookie } from '../utils/cookies';
 import { validateJWT, decodeJWT } from '../utils/jwt';
 
 export class Agemin {
+  // Global state shared across all instances
+  private static globalModal: Modal | null = null;
+  private static globalVerificationPromise: Promise<boolean | string> | null = null;
+  private static globalIsVerifying: boolean = false;
+  
+  // Instance properties
   private config: Required<AgeminConfig>;
   private modal: Modal;
   private callbacks: {
@@ -27,8 +33,6 @@ export class Agemin {
     onCancel?: () => void;
     onClose?: () => void;
   } = {};
-  private verificationPromise?: Promise<boolean | string>;
-  private isVerifying: boolean = false;
 
   constructor(config: AgeminConfig) {
     if (!config || !config.assetId) {
@@ -83,24 +87,24 @@ export class Agemin {
    * Start the verification process
    */
   verify(options: VerifyOptions = {}): string {
-    // Check if modal is already open
-    if (this.isOpen()) {
+    // Check if any modal is already open globally
+    if (Agemin.globalModal && Agemin.globalModal.isOpen()) {
       if (this.config.debug) {
-        console.log('Agemin SDK: Modal already open, ignoring duplicate verify() call');
+        console.log('Agemin SDK: Modal already open globally, ignoring duplicate verify() call');
       }
       return this.config.referenceId;
     }
 
-    // Check if verification is already in progress
-    if (this.isVerifying) {
+    // Check if verification is already in progress globally
+    if (Agemin.globalIsVerifying) {
       if (this.config.debug) {
-        console.log('Agemin SDK: Verification already in progress, ignoring duplicate call');
+        console.log('Agemin SDK: Verification already in progress globally, ignoring duplicate call');
       }
       return this.config.referenceId;
     }
 
-    // Mark verification as in progress
-    this.isVerifying = true;
+    // Mark verification as in progress globally
+    Agemin.globalIsVerifying = true;
 
     // Store callbacks
     this.callbacks = {
@@ -137,10 +141,14 @@ export class Agemin {
 
         case 'modal':
         default:
+          // Store modal globally
+          Agemin.globalModal = this.modal;
           this.modal.openIframe(url, () => this.handleCancel());
           break;
       }
     } catch (error) {
+      // Reset global state on error
+      Agemin.globalIsVerifying = false;
       this.handleError({
         code: 'LAUNCH_ERROR',
         message: error instanceof Error ? error.message : 'Failed to launch verification'
@@ -177,23 +185,23 @@ export class Agemin {
    * @returns true if valid session exists, or referenceId if verification was launched
    */
   async validateSession(options?: VerifyOptions): Promise<boolean | string> {
-    // If already validating, return existing promise
-    if (this.verificationPromise) {
+    // If already validating globally, return existing promise
+    if (Agemin.globalVerificationPromise) {
       if (this.config.debug) {
-        console.log('Agemin SDK: Validation already in progress, returning existing promise');
+        console.log('Agemin SDK: Validation already in progress globally, returning existing promise');
       }
-      return this.verificationPromise;
+      return Agemin.globalVerificationPromise;
     }
 
-    // Create and store the promise
-    this.verificationPromise = this.doValidateSession(options);
+    // Create and store the promise globally
+    Agemin.globalVerificationPromise = this.doValidateSession(options);
     
     try {
-      const result = await this.verificationPromise;
+      const result = await Agemin.globalVerificationPromise;
       return result;
     } finally {
-      // Clear the promise when done
-      this.verificationPromise = undefined;
+      // Clear the global promise when done
+      Agemin.globalVerificationPromise = null;
     }
   }
 
@@ -394,8 +402,9 @@ export class Agemin {
   }
 
   private async handleSuccess(data: any): Promise<void> {
-    // Reset verification state
-    this.isVerifying = false;
+    // Reset global verification state
+    Agemin.globalIsVerifying = false;
+    Agemin.globalModal = null;
     
     if (this.config.debug) {
       console.log('Agemin SDK: Verification process completed', data);
@@ -514,8 +523,9 @@ export class Agemin {
   }
 
   private handleError(error: VerificationError): void {
-    // Reset verification state
-    this.isVerifying = false;
+    // Reset global verification state
+    Agemin.globalIsVerifying = false;
+    Agemin.globalModal = null;
     
     if (this.config.debug) {
       console.error('Agemin SDK: Technical error occurred - consider showing fallback age confirmation', error);
@@ -533,8 +543,9 @@ export class Agemin {
   }
 
   private handleCancel(): void {
-    // Reset verification state
-    this.isVerifying = false;
+    // Reset global verification state
+    Agemin.globalIsVerifying = false;
+    Agemin.globalModal = null;
     
     if (this.config.debug) {
       console.log('Agemin SDK: Verification cancelled');

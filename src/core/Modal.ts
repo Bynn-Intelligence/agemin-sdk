@@ -25,6 +25,12 @@ export class Modal {
   }
   
   openIframe(url: string, onClose?: () => void): void {
+    // Check if modal already exists
+    if (document.getElementById('agemin-iframe')) {
+      console.warn('Agemin SDK: Modal already exists, not creating another one');
+      return;
+    }
+    
     // Determine if we should use mobile styles (fullscreen)
     const isMobileView = isSmallScreen();
     const styles = isMobileView ? MOBILE_MODAL_STYLES : MODAL_STYLES;
