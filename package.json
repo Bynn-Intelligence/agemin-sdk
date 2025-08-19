@@ -32,6 +32,7 @@
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/node": "^22.10.6",
+    "jose": "^6.0.12",
     "rollup": "^4.29.1",
     "tslib": "^2.8.1",
     "typescript": "^5.8.3"
@@ -43,8 +44,5 @@
   "bugs": {
     "url": "https://github.com/Bynn-Intelligence/agemin-sdk/issues"
   },
-  "homepage": "https://agemin.com",
-  "dependencies": {
-    "jose": "^6.0.12"
-  }
+  "homepage": "https://agemin.com"
 }
