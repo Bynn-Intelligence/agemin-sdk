@@ -9,7 +9,7 @@ A secure, type-safe JavaScript/TypeScript SDK for integrating Agemin biometric a
 
 > **📝 Prerequisites**: 
 > 1. Create a free account on [agemin.com](https://agemin.com)
-> 2. Get your **Asset ID** from [agemin.com/app/websites](https://agemin.com/app/websites) (format: `asset_5b08b274353b92f4`)
+> 2. Get your **Asset ID** from [agemin.com/app/websites](https://agemin.com/app/websites) (format: `ast_HfQNoqfkqJdT5m8akPNKaXYu`)
 > 3. Get your **Private Key** from [agemin.com/app/api-keys](https://agemin.com/app/api-keys)
 > 4. Keep your Private Key secure on your backend server
 
