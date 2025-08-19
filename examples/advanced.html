@@ -226,12 +226,12 @@
       
       <div class="form-group">
         <label for="asset-id">Asset ID</label>
-        <input type="text" id="asset-id" value="asset_5b08b274353b92f4" placeholder="Enter your Asset ID from agemin.com/app/websites">
+        <input type="text" id="asset-id" value="ast_HfQNoqfkqJdT5m8akPNKaXYu" placeholder="Enter your Asset ID from agemin.com/app/websites">
       </div>
       
       <div class="form-group">
         <label for="base-url">Base URL</label>
-        <input type="text" id="base-url" value="http://localhost:5173" placeholder="https://verify.agemin.com">
+        <input type="text" id="base-url" value="https://verify.agemin.com" placeholder="https://verify.agemin.com">
       </div>
       
       <div class="form-group">
@@ -358,13 +358,12 @@
     
     function initializeSDK() {
       try {
-        // Generate session ID (in production, this must come from your backend)
-        const sessionId = 'test-session-' + Date.now();
+        // Generate reference ID (in production, this must come from your backend)
+        const referenceId = 'ref_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         
-        const baseUrlValue = document.getElementById('base-url').value;
         const config = {
           assetId: document.getElementById('asset-id').value,
-          sessionId: sessionId, // Must be generated server-side in production
+          referenceId: referenceId, // Must be generated server-side in production (max 50 bytes)
           theme: document.getElementById('theme').value,
           locale: document.getElementById('locale').value,
           debug: true
@@ -400,13 +399,21 @@
       addLog(`Metadata: ${JSON.stringify(metadata)}`, 'info');
       
       try {
-        const sessionId = agemin.verify({
+        const referenceId = agemin.verify({
           mode: mode,
           metadata: metadata,
           onSuccess: (data) => {
-            addLog(`✅ Verification completed: ${JSON.stringify(data)}`, 'success');
-            showStatus('Verification completed! Check result server-side', 'success');
-            addLog('In production: Use session ID to verify result on backend', 'info');
+            addLog(`✅ Verification process completed: ${JSON.stringify(data)}`, 'success');
+            showStatus('Verification process completed! (Not age result)', 'success');
+            addLog('Note: onSuccess only means process completed, not that user passed', 'info');
+          },
+          onAgePass: (data) => {
+            addLog(`✅ USER PASSED AGE CHECK: ${JSON.stringify(data)}`, 'success');
+            showStatus('Age verified - User meets requirements', 'success');
+          },
+          onAgeFail: (data) => {
+            addLog(`⛔ USER FAILED AGE CHECK: ${JSON.stringify(data)}`, 'error');
+            showStatus('User does not meet age requirements', 'error');
           },
           onError: (error) => {
             addLog(`⚠️ TECHNICAL ERROR: ${JSON.stringify(error)}`, 'error');
@@ -437,7 +444,7 @@
           }
         });
         
-        addLog(`Verification started with session ID: ${sessionId}`, 'success');
+        addLog(`Verification started with reference ID: ${referenceId}`, 'success');
         
       } catch (error) {
         addLog(`Failed to start verification: ${error.message}`, 'error');

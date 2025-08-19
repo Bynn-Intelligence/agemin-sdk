@@ -195,7 +195,7 @@
       <span class="code-comment"><!-- Include SDK with configuration attributes --></span><br>
       &lt;<span class="code-attr">script</span> <span class="code-attr">src</span>=<span class="code-string">"agemin-sdk.js"</span><br>
       &nbsp;&nbsp;<span class="code-attr">data-agemin-asset-id</span>=<span class="code-string">"asset_5b08b274353b92f4"</span><br>
-      &nbsp;&nbsp;<span class="code-attr">data-agemin-session-id</span>=<span class="code-string">"server-generated-session-id"</span><br>
+      &nbsp;&nbsp;<span class="code-attr">data-agemin-reference-id</span>=<span class="code-string">"server-generated-reference-id"</span><br>
       &nbsp;&nbsp;<span class="code-attr">data-agemin-theme</span>=<span class="code-string">"auto"</span><br>
       &nbsp;&nbsp;<span class="code-attr">data-agemin-locale</span>=<span class="code-string">"en"</span><br>
       &nbsp;&nbsp;<span class="code-attr">data-agemin-debug</span>=<span class="code-string">"true"</span>&gt;<br>
@@ -230,8 +230,8 @@
 
   <!-- Include the SDK with auto-initialization attributes -->
   <script src="../dist/agemin-sdk.umd.js"
-    data-agemin-asset-id="asset_5b08b274353b92f4"
-    data-agemin-session-id="test-session-12345"
+    data-agemin-asset-id="ast_HfQNoqfkqJdT5m8akPNKaXYu"
+    data-agemin-reference-id="ref_12345_abc123"
     data-agemin-theme="auto"
     data-agemin-locale="en"
     data-agemin-debug="true">
@@ -267,8 +267,8 @@
           const customOptions = {
             ...options,
             onSuccess: (data) => {
-              showStatus('✅ Verification completed! Check result server-side', 'success');
-              console.log('Session ID for backend verification:', data.sessionId);
+              showStatus('✅ Verification process completed!', 'success');
+              console.log('Reference ID for backend verification:', data.referenceId);
               if (options.onSuccess) options.onSuccess(data);
             },
             onError: (error) => {
