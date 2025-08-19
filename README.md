@@ -328,6 +328,7 @@ const agemin = new Agemin({
   successUrl?: string;        // URL to redirect on success
   cancelUrl?: string;         // URL to redirect on cancellation
   debug?: boolean;            // Enable debug logging (default: false)
+  allowSearchEngineBypass?: boolean;  // Allow search engines to bypass age verification (default: false)
 });
 ```
 
@@ -336,6 +337,31 @@ const agemin = new Agemin({
 - `metadata`: Maximum 256 bytes when JSON stringified
 
 These limits ensure efficient data transmission and prevent abuse.
+
+### SEO Configuration - Search Engine Bypass
+
+For SEO optimization, you can allow search engine crawlers to bypass age verification while keeping it active for regular users:
+
+```javascript
+const agemin = new Agemin({
+  assetId: 'ast_xxx',
+  referenceId: 'ref_xxx',
+  allowSearchEngineBypass: true  // Enable for SEO
+});
+
+// When validateSession() is called:
+// - Search engines (Googlebot, Bingbot, etc.) → Automatic bypass, returns true
+// - Regular users → Normal age verification flow
+```
+
+This feature detects major search engine bots including:
+- Google (Googlebot, AdsBot)
+- Bing/Microsoft (Bingbot, MSNbot)
+- Baidu, Yandex, DuckDuckGo
+- Social media crawlers (Facebook, Twitter, LinkedIn)
+- SEO tools (Ahrefs, SEMrush, Moz)
+
+**Important**: This only affects client-side validation. Search engines still won't have valid JWT cookies for server-side verification.
 
 ### Verification Options
 
