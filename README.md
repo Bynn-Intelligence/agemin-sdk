@@ -28,7 +28,7 @@ A secure, type-safe JavaScript/TypeScript SDK for integrating Agemin biometric a
 
 1. **Sign up for a free account** at [agemin.com](https://agemin.com)
 2. **Get your Asset ID** at [agemin.com/app/websites](https://agemin.com/app/websites)
-   - Each website/app has a unique Asset ID (e.g., `asset_5b08b274353b92f4`)
+   - Each website/app has a unique Asset ID (e.g., `ast_HfQNoqfkqJdT5m8akPNKaXYu`)
    - Use this Asset ID in your frontend SDK
 3. **Get your Private Key** at [agemin.com/app/api-keys](https://agemin.com/app/api-keys)
    - Keep this secure on your backend only
@@ -597,7 +597,7 @@ import Agemin, {
 
 // Full type safety and IntelliSense support
 const config: AgeminConfig = {
-  assetId: 'asset_5b08b274353b92f4',
+  assetId: 'ast_HfQNoqfkqJdT5m8akPNKaXYu',
   referenceId: 'unique-reference-id',  // Required: generate server-side
   theme: 'dark'
 };
@@ -894,7 +894,7 @@ sequenceDiagram
 ### API Keys
 
 - **Asset ID**: Get from [agemin.com/app/websites](https://agemin.com/app/websites)
-  - Each website/app has a unique Asset ID (format: `asset_5b08b274353b92f4`)
+  - Each website/app has a unique Asset ID (format: `ast_HfQNoqfkqJdT5m8akPNKaXYu`)
   - Safe to use in frontend code
 - **Private Key**: Get from [agemin.com/app/api-keys](https://agemin.com/app/api-keys)
   - NEVER expose in frontend code, keep on backend only
