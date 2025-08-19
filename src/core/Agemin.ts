@@ -15,6 +15,7 @@ import {
 import { getDefaultMode, isSupported, getBrowserLanguage } from '../utils/device';
 import { setCookie, getCookie, deleteCookie } from '../utils/cookies';
 import { validateJWT, decodeJWT } from '../utils/jwt';
+import { getDeviceFingerprint } from '../utils/fingerprint';
 
 // Global state interface
 interface AgeminGlobalState {
@@ -212,7 +213,7 @@ export class Agemin {
     }
 
     // Create a new promise for this verification
-    const verificationPromise = new Promise<boolean>((resolve, reject) => {
+    const verificationPromise = new Promise<boolean>(async (resolve, reject) => {
       // Store the resolve and reject functions globally
       window.__AGEMIN__.verificationResolve = resolve;
       window.__AGEMIN__.verificationReject = reject;
@@ -236,8 +237,11 @@ export class Agemin {
       // Store the referenceId globally so other instances know which one is active
       window.__AGEMIN__.referenceId = referenceId;
 
-      // Build verification URL
-      const url = this.buildVerificationUrl(referenceId, options);
+      // Generate device fingerprint (non-blocking, with graceful fallback)
+      const fingerprint = await getDeviceFingerprint();
+
+      // Build verification URL with fingerprint
+      const url = this.buildVerificationUrl(referenceId, options, fingerprint);
 
       // Handle verification based on mode
       const mode = options.mode || getDefaultMode();
@@ -618,7 +622,7 @@ export class Agemin {
     });
   }
 
-  private buildVerificationUrl(referenceId: string, options: VerifyOptions): string {
+  private buildVerificationUrl(referenceId: string, options: VerifyOptions, fingerprint?: string): string {
     // Use verificationURL template if provided, otherwise construct from baseUrl
     let baseUrl: string;
 
@@ -650,6 +654,11 @@ export class Agemin {
       mode: 'embedded',
       sdk_version: SDK_VERSION
     };
+
+    // Add device fingerprint if available
+    if (fingerprint) {
+      params.fp = fingerprint;
+    }
 
     if (this.config.errorUrl) params.error_url = this.config.errorUrl;
     if (this.config.successUrl) params.success_url = this.config.successUrl;
