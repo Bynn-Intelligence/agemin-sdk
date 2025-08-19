@@ -185,7 +185,7 @@ export class Agemin {
    */
   private verifyAndWait(options: VerifyOptions = {}): Promise<boolean> {
     // Check if search engine bypass is enabled and user agent is a search engine
-    if (this.config.allowSearchEngineBypass && isSearchEngineBot()) {
+    if (this.config.allowSearchEngineBypass && isSearchEngineBot(this.config.searchEngineDetection)) {
       if (this.config.debug) {
         console.log('Agemin SDK: Search engine bot detected, bypassing verification');
       }
@@ -397,7 +397,7 @@ export class Agemin {
    */
   private async doValidateSession(options?: VerifyOptions): Promise<boolean> {
     // Check if search engine bypass is enabled and user agent is a search engine
-    if (this.config.allowSearchEngineBypass && isSearchEngineBot()) {
+    if (this.config.allowSearchEngineBypass && isSearchEngineBot(this.config.searchEngineDetection)) {
       if (this.config.debug) {
         console.log('Agemin SDK: Search engine bot detected, bypassing age verification');
       }

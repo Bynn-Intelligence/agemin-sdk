@@ -5,7 +5,8 @@ export const DEFAULT_CONFIG = {
   theme: 'auto' as const,
   locale: 'auto',
   debug: false,
-  allowSearchEngineBypass: false
+  allowSearchEngineBypass: false,
+  searchEngineDetection: 'ua' as const
 };
 
 export const MODAL_STYLES = {

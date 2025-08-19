@@ -1,5 +1,6 @@
 export type Theme = 'light' | 'dark' | 'auto';
 export type VerificationMode = 'modal' | 'redirect';
+export type SearchEngineDetectionMode = 'ua' | 'headless' | 'cookies' | 'combined' | 'strict';
 
 export interface AgeminConfig {
   /**
@@ -74,6 +75,17 @@ export interface AgeminConfig {
    * @default false
    */
   allowSearchEngineBypass?: boolean;
+  
+  /**
+   * Search engine detection mode for bypass feature
+   * - 'ua': User agent string detection only (fastest, default)
+   * - 'headless': Headless browser detection (plugins, languages, WebGL)
+   * - 'cookies': Cookie support check (crawlers typically don't support cookies)
+   * - 'combined': Any detection method triggers bypass (most inclusive)
+   * - 'strict': Requires multiple signals (reduces false positives)
+   * @default 'ua'
+   */
+  searchEngineDetection?: SearchEngineDetectionMode;
 }
 
 export interface VerifyOptions {

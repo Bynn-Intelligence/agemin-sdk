@@ -329,6 +329,7 @@ const agemin = new Agemin({
   cancelUrl?: string;         // URL to redirect on cancellation
   debug?: boolean;            // Enable debug logging (default: false)
   allowSearchEngineBypass?: boolean;  // Allow search engines to bypass age verification (default: false)
+  searchEngineDetection?: 'ua' | 'headless' | 'cookies' | 'combined' | 'strict';  // Detection mode (default: 'ua')
 });
 ```
 
@@ -346,22 +347,88 @@ For SEO optimization, you can allow search engine crawlers to bypass age verific
 const agemin = new Agemin({
   assetId: 'ast_xxx',
   referenceId: 'ref_xxx',
-  allowSearchEngineBypass: true  // Enable for SEO
+  allowSearchEngineBypass: true,  // Enable bypass for crawlers
+  searchEngineDetection: 'combined'  // Detection mode (default: 'ua')
 });
 
 // When validateSession() is called:
-// - Search engines (Googlebot, Bingbot, etc.) → Automatic bypass, returns true
+// - Search engines → Automatic bypass, returns true
 // - Regular users → Normal age verification flow
 ```
 
-This feature detects major search engine bots including:
-- Google (Googlebot, AdsBot)
-- Bing/Microsoft (Bingbot, MSNbot)
-- Baidu, Yandex, DuckDuckGo
-- Social media crawlers (Facebook, Twitter, LinkedIn)
-- SEO tools (Ahrefs, SEMrush, Moz)
+#### Detection Modes
 
-**Important**: This only affects client-side validation. Search engines still won't have valid JWT cookies for server-side verification.
+The SDK offers multiple crawler detection strategies to balance accuracy and performance:
+
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| `'ua'` | User agent string detection only | **Default.** Fast, reliable for most crawlers |
+| `'headless'` | Detects headless browser characteristics | Catches sophisticated crawlers using headless Chrome |
+| `'cookies'` | Checks if cookies are supported | Googlebot typically doesn't support cookies |
+| `'combined'` | Any detection method triggers bypass | **Most inclusive.** Best for SEO but may have false positives |
+| `'strict'` | Requires multiple detection signals | **Most accurate.** Reduces false positives |
+
+#### Detection Methods Explained
+
+**1. User Agent Detection (`'ua'`)**
+- Checks for known crawler patterns in user agent string
+- Covers Google, Bing, social media bots, SEO tools
+- Fast but can be spoofed
+
+**2. Headless Browser Detection (`'headless'`)**
+- Checks navigator.plugins.length === 0
+- Checks empty navigator.languages
+- Detects WebGL signatures (Mesa OffScreen, SwiftShader)
+- Effective against headless Chrome/Puppeteer
+
+**3. Cookie Support Detection (`'cookies'`)**
+- Tests if browser can set/read cookies
+- Googlebot generally doesn't support cookies
+- May trigger on privacy-focused users
+
+**4. Combined Detection (`'combined'`)**
+- Uses OR logic: any method detecting a bot triggers bypass
+- Best for maximum SEO coverage
+- May bypass for some privacy-conscious users
+
+**5. Strict Detection (`'strict'`)**
+- Requires bot user agent AND (headless OR no cookies)
+- Minimizes false positives
+- May miss some legitimate crawlers
+
+#### Example Configurations
+
+```javascript
+// Maximum SEO coverage (recommended for content sites)
+const agemin = new Agemin({
+  assetId: 'ast_xxx',
+  referenceId: 'ref_xxx',
+  allowSearchEngineBypass: true,
+  searchEngineDetection: 'combined'
+});
+
+// Balanced approach (default)
+const agemin = new Agemin({
+  assetId: 'ast_xxx',
+  referenceId: 'ref_xxx',
+  allowSearchEngineBypass: true
+  // searchEngineDetection defaults to 'ua'
+});
+
+// Strict validation (e-commerce, sensitive content)
+const agemin = new Agemin({
+  assetId: 'ast_xxx',
+  referenceId: 'ref_xxx',
+  allowSearchEngineBypass: true,
+  searchEngineDetection: 'strict'
+});
+```
+
+**Important Notes:**
+- Detection results are cached for 1 minute to improve performance
+- This only affects client-side validation
+- Search engines still won't have valid JWT cookies for server-side verification
+- Test with Google's Mobile-Friendly Test tool to verify your configuration
 
 ### Verification Options
 
