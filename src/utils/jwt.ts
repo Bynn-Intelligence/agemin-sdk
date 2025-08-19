@@ -30,6 +30,7 @@ export interface JWTPayload {
     is_of_age: boolean;
     passed: boolean;
     face_confidence: number;
+    domain: string;
   };
 }
 
@@ -61,6 +62,45 @@ export function decodeJWT(token: string): JWTPayload | null {
 }
 
 /**
+ * Validate that the JWT domain matches the current hostname
+ * Skips validation for localhost and local IP addresses
+ */
+function isValidDomain(jwtDomain: string | undefined, currentHostname: string): boolean {
+  // If no domain in JWT, fail validation (except for local development)
+  if (!jwtDomain) {
+    const localHosts = ['localhost', '127.0.0.1', '::1', '[::1]', '0.0.0.0'];
+    const isLocalDev = localHosts.includes(currentHostname) || 
+                       /^[\d.]+$/.test(currentHostname) || // IPv4
+                       /^[\da-f:]+$/i.test(currentHostname); // IPv6
+    return isLocalDev; // Only allow missing domain for local development
+  }
+  
+  // Skip validation for local development environments
+  const localHosts = ['localhost', '127.0.0.1', '::1', '[::1]', '0.0.0.0'];
+  if (localHosts.includes(currentHostname) || 
+      /^[\d.]+$/.test(currentHostname) || // IPv4 addresses
+      /^[\da-f:]+$/i.test(currentHostname)) { // IPv6 addresses
+    return true; // Skip validation for local development
+  }
+  
+  // Normalize domains (remove port if present)
+  const normalizedCurrent = currentHostname.split(':')[0].toLowerCase();
+  const normalizedJWT = jwtDomain.toLowerCase();
+  
+  // Exact match
+  if (normalizedJWT === normalizedCurrent) {
+    return true;
+  }
+  
+  // Subdomain match (e.g., www.example.com matches example.com)
+  if (normalizedCurrent.endsWith('.' + normalizedJWT)) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
  * Validate a JWT token completely (signature, expiration, and payload)
  */
 export async function validateJWT(token: string): Promise<{
@@ -81,6 +121,19 @@ export async function validateJWT(token: string): Promise<{
     
     // Cast to our expected payload type
     const typedPayload = payload as unknown as JWTPayload;
+    
+    // Validate domain matches current hostname
+    const currentHostname = window.location.hostname;
+    const jwtDomain = typedPayload.data?.domain;
+    
+    if (!isValidDomain(jwtDomain, currentHostname)) {
+      console.error(`JWT domain mismatch - expected ${jwtDomain}, got ${currentHostname}`);
+      return {
+        isValid: false,
+        isOfAge: false,
+        error: `JWT domain mismatch - token is for ${jwtDomain} but current domain is ${currentHostname}`
+      };
+    }
     
     // Check is_of_age in payload
     const isOfAge = typedPayload.data?.is_of_age === true;
