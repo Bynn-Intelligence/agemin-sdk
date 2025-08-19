@@ -3,6 +3,7 @@
  */
 
 import { importSPKI, jwtVerify, decodeJwt } from 'jose';
+import { getDeviceFingerprint } from './fingerprint';
 
 // RSA Public Key for signature verification
 const RSA_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
@@ -31,6 +32,8 @@ export interface JWTPayload {
     passed: boolean;
     face_confidence: number;
     domain: string;
+    asset_token?: string;
+    fp?: string;
   };
 }
 
@@ -133,6 +136,20 @@ export async function validateJWT(token: string): Promise<{
         isOfAge: false,
         error: `JWT domain mismatch - token is for ${jwtDomain} but current domain is ${currentHostname}`
       };
+    }
+    
+    // Validate fingerprint matches current device (if fingerprint is present in JWT)
+    const jwtFingerprint = typedPayload.data?.fp;
+    if (jwtFingerprint) {
+      const currentFingerprint = await getDeviceFingerprint();
+      if (currentFingerprint && currentFingerprint !== jwtFingerprint) {
+        console.error(`JWT fingerprint mismatch - token was issued for a different device`);
+        return {
+          isValid: false,
+          isOfAge: false,
+          error: `JWT fingerprint mismatch - token was issued for a different device`
+        };
+      }
     }
     
     // Check is_of_age in payload
