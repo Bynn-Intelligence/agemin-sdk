@@ -67,6 +67,13 @@ export interface AgeminConfig {
    * @default false
    */
   debug?: boolean;
+  
+  /**
+   * Allow search engine crawlers to bypass age verification
+   * Useful for SEO - allows content indexing while maintaining age-gate for users
+   * @default false
+   */
+  allowSearchEngineBypass?: boolean;
 }
 
 export interface VerifyOptions {

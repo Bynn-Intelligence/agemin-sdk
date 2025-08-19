@@ -61,3 +61,78 @@ export function getBrowserLanguage(): string {
   // Return the language code (e.g., 'en-US' -> 'en')
   return lang.split('-')[0].toLowerCase();
 }
+
+/**
+ * Check if the current user agent is a search engine bot/crawler
+ * Used to allow search engines to bypass age verification for SEO purposes
+ */
+export function isSearchEngineBot(): boolean {
+  if (typeof navigator === 'undefined' || !navigator.userAgent) {
+    return false;
+  }
+  
+  const userAgent = navigator.userAgent.toLowerCase();
+  
+  // Comprehensive list of search engine bot patterns
+  const searchEnginePatterns = [
+    // Google
+    'googlebot',
+    'adsbot-google',
+    'mediapartners-google',
+    'google-inspectiontool',
+    'googlesecurityscanner',
+    
+    // Bing/Microsoft
+    'bingbot',
+    'bingpreview',
+    'msnbot',
+    'adidxbot',
+    
+    // Baidu
+    'baiduspider',
+    'baidu',
+    
+    // Yandex
+    'yandexbot',
+    'yandex',
+    
+    // DuckDuckGo
+    'duckduckbot',
+    'duckduckgo',
+    
+    // Yahoo/Verizon
+    'slurp',
+    
+    // Social Media
+    'facebookexternalhit',
+    'facebookcatalog',
+    'twitterbot',
+    'linkedinbot',
+    'whatsapp',
+    'telegrambot',
+    'discordbot',
+    'slackbot',
+    
+    // Other Major Crawlers
+    'applebot',        // Apple
+    'ahrefsbot',       // Ahrefs SEO
+    'semrushbot',      // SEMrush SEO
+    'dotbot',          // Moz
+    'rogerbot',        // Moz
+    'seznambot',       // Seznam
+    'petalbot',        // Huawei
+    'mj12bot',         // Majestic
+    'blexbot',         // webmeup
+    'serpstatbot',     // Serpstat
+    'screaming frog',  // Screaming Frog SEO
+    
+    // Generic patterns
+    'bot',
+    'crawler',
+    'spider',
+    'scraper'
+  ];
+  
+  // Check if user agent contains any of the patterns
+  return searchEnginePatterns.some(pattern => userAgent.includes(pattern));
+}

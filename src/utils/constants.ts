@@ -4,7 +4,8 @@ export const DEFAULT_CONFIG = {
   baseUrl: 'https://verify.agemin.com',
   theme: 'auto' as const,
   locale: 'auto',
-  debug: false
+  debug: false,
+  allowSearchEngineBypass: false
 };
 
 export const MODAL_STYLES = {

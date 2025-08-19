@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/@bynn-intelligence/agemin-sdk.svg)](https://www.npmjs.com/package/@bynn-intelligence/agemin-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A secure, type-safe JavaScript/TypeScript SDK for integrating Agemin age verification into your web applications.
+A secure, type-safe JavaScript/TypeScript SDK for integrating Agemin biometric age verification into your web applications.
 
 > **🔒 Security-First Design**: This SDK uses a secure architecture where verification results are only accessible server-side using your private API key, preventing abuse and ensuring billing security.
 

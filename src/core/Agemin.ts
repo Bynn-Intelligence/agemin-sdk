@@ -12,7 +12,7 @@ import {
   parseMessage,
   isTrustedOrigin
 } from '../utils/dom';
-import { getDefaultMode, isSupported, getBrowserLanguage } from '../utils/device';
+import { getDefaultMode, isSupported, getBrowserLanguage, isSearchEngineBot } from '../utils/device';
 import { setCookie, getCookie, deleteCookie } from '../utils/cookies';
 import { validateJWT, decodeJWT } from '../utils/jwt';
 import { getDeviceFingerprint } from '../utils/fingerprint';
@@ -184,6 +184,15 @@ export class Agemin {
    * Start the verification process and return a promise that resolves when complete
    */
   private verifyAndWait(options: VerifyOptions = {}): Promise<boolean> {
+    // Check if search engine bypass is enabled and user agent is a search engine
+    if (this.config.allowSearchEngineBypass && isSearchEngineBot()) {
+      if (this.config.debug) {
+        console.log('Agemin SDK: Search engine bot detected, bypassing verification');
+      }
+      // Return resolved promise to allow access without verification
+      return Promise.resolve(true);
+    }
+    
     // Check if modal already exists in DOM
     if (document.getElementById('agemin-iframe')) {
       if (this.config.debug) {
@@ -387,6 +396,15 @@ export class Agemin {
    * Internal method that performs the actual validation
    */
   private async doValidateSession(options?: VerifyOptions): Promise<boolean> {
+    // Check if search engine bypass is enabled and user agent is a search engine
+    if (this.config.allowSearchEngineBypass && isSearchEngineBot()) {
+      if (this.config.debug) {
+        console.log('Agemin SDK: Search engine bot detected, bypassing age verification');
+      }
+      // Return true to allow access without verification
+      return true;
+    }
+    
     try {
       // Check for existing JWT cookie
       const cookieName = 'agemin_verification';
