@@ -599,6 +599,7 @@ import Agemin, {
 // Full type safety and IntelliSense support
 const config: AgeminConfig = {
   assetId: 'asset_5b08b274353b92f4',
+  referenceId: 'unique-reference-id',  // Required: generate server-side
   theme: 'dark'
 };
 
@@ -701,7 +702,8 @@ function AgeVerification() {
   
   useEffect(() => {
     const sdk = new Agemin({
-      assetId: process.env.REACT_APP_AGEMIN_ASSET_ID
+      assetId: process.env.REACT_APP_AGEMIN_ASSET_ID,
+      referenceId: generateUniqueId()  // Required: generate unique ID
     });
     setAgemin(sdk);
   }, []);
@@ -767,7 +769,8 @@ export default {
   
   mounted() {
     this.agemin = new Agemin({
-      assetId: process.env.VUE_APP_AGEMIN_ASSET_ID
+      assetId: process.env.VUE_APP_AGEMIN_ASSET_ID,
+      referenceId: this.generateUniqueId()  // Required: generate unique ID
     });
   },
   
