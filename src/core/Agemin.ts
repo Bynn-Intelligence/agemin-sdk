@@ -16,11 +16,45 @@ import { getDefaultMode, isSupported, getBrowserLanguage } from '../utils/device
 import { setCookie, getCookie, deleteCookie } from '../utils/cookies';
 import { validateJWT, decodeJWT } from '../utils/jwt';
 
+// Global state interface
+interface AgeminGlobalState {
+  isInitializing: boolean;
+  isVerifying: boolean;
+  referenceId: string | null;
+  verificationPromise: Promise<boolean> | null;
+  verificationResolve: ((value: boolean) => void) | null;
+  verificationReject: ((error: any) => void) | null;
+  validationQueue: Promise<any>;
+  instances: { [assetId: string]: Agemin };  // Store instances keyed by assetId
+  instanceCreationInProgress: { [assetId: string]: boolean };  // Track instance creation
+}
+
+// Initialize global state on window object
+// This persists across module re-evaluations and React remounts
+declare global {
+  interface Window {
+    __AGEMIN__: AgeminGlobalState;
+  }
+}
+
+// Initialize state if not already present
+if (typeof window !== 'undefined' && !window.__AGEMIN__) {
+  window.__AGEMIN__ = {
+    isInitializing: false,
+    isVerifying: false,
+    referenceId: null,
+    verificationPromise: null,
+    verificationResolve: null,
+    verificationReject: null,
+    validationQueue: Promise.resolve(),
+    instances: {},  // Initialize empty instances map
+    instanceCreationInProgress: {}  // Track ongoing instance creation
+  };
+}
+
 export class Agemin {
-  // Global state shared across all instances
-  private static globalModal: Modal | null = null;
-  private static globalVerificationPromise: Promise<boolean | string> | null = null;
-  private static globalIsVerifying: boolean = false;
+  // Static property for verification state only
+  private static isVerificationActive: boolean = false;
   
   // Instance properties
   private config: Required<AgeminConfig>;
@@ -38,9 +72,66 @@ export class Agemin {
     if (!config || !config.assetId) {
       throw new Error('Agemin SDK: assetId is required');
     }
+    
+    // Check if instance already exists for this assetId
+    if (typeof window !== 'undefined' && window.__AGEMIN__?.instances[config.assetId]) {
+      if (config.debug) {
+        console.warn(`Agemin SDK: Instance already exists for assetId ${config.assetId}. Returning existing instance with updated referenceId.`);
+      }
+      
+      // Update the referenceId (and other request-specific config) on the existing instance
+      // This allows React StrictMode to work correctly with different referenceIds
+      const instance = window.__AGEMIN__.instances[config.assetId];
+      instance.config.referenceId = config.referenceId;
+      
+      // Also update metadata if provided
+      if (config.metadata !== undefined) {
+        instance.config.metadata = config.metadata;
+      }
+      
+      return instance;
+    }
+    
+    // Check if instance creation is already in progress for this assetId (race condition prevention)
+    if (typeof window !== 'undefined' && window.__AGEMIN__?.instanceCreationInProgress[config.assetId]) {
+      if (config.debug) {
+        console.warn(`Agemin SDK: Instance creation already in progress for assetId ${config.assetId}. Waiting for completion...`);
+      }
+      
+      // Wait a bit and try to get the instance
+      const waitForInstance = () => {
+        const instance = window.__AGEMIN__.instances[config.assetId];
+        if (instance) {
+          // Update config on the instance that was created
+          instance.config.referenceId = config.referenceId;
+          if (config.metadata !== undefined) {
+            instance.config.metadata = config.metadata;
+          }
+          return instance;
+        }
+        // If still not ready, return a temporary instance that will be replaced
+        return this;
+      };
+      
+      // Try to get the instance after a short delay
+      setTimeout(waitForInstance, 10);
+      return waitForInstance();
+    }
+    
+    // Mark that we're creating an instance for this assetId (prevents race conditions)
+    if (typeof window !== 'undefined' && window.__AGEMIN__) {
+      window.__AGEMIN__.instanceCreationInProgress[config.assetId] = true;
+      // IMMEDIATELY store this instance to prevent other parallel calls from creating duplicates
+      window.__AGEMIN__.instances[config.assetId] = this;
+    }
 
     if (!config.referenceId) {
       throw new Error('Agemin SDK: Unique referenceId is required. Generally use the id your webserver sets for the session.');
+    }
+    
+    // Log instance creation
+    if (config.debug) {
+      console.log(`Agemin SDK: Creating first instance with referenceId: ${config.referenceId}`);
     }
 
     // Validate referenceId size (max 50 bytes)
@@ -81,81 +172,135 @@ export class Agemin {
     }
 
     this.setupMessageListener();
+    
+    // Clear the creation flag now that instance is fully initialized
+    if (typeof window !== 'undefined' && window.__AGEMIN__) {
+      delete window.__AGEMIN__.instanceCreationInProgress[this.config.assetId];
+    }
   }
 
   /**
-   * Start the verification process
+   * Start the verification process and return a promise that resolves when complete
    */
-  verify(options: VerifyOptions = {}): string {
-    // Check if any modal is already open globally
-    if (Agemin.globalModal && Agemin.globalModal.isOpen()) {
+  private verifyAndWait(options: VerifyOptions = {}): Promise<boolean> {
+    // Check if modal already exists in DOM
+    if (document.getElementById('agemin-iframe')) {
       if (this.config.debug) {
-        console.log('Agemin SDK: Modal already open globally, ignoring duplicate verify() call');
+        console.log('Agemin SDK: Modal already exists, returning existing promise');
       }
-      return this.config.referenceId;
+      // Return the existing promise if available
+      if (window.__AGEMIN__.verificationPromise) {
+        return window.__AGEMIN__.verificationPromise;
+      }
+      // Otherwise create a rejected promise (shouldn't happen)
+      return Promise.reject(new Error('Modal exists but no promise found'));
     }
 
     // Check if verification is already in progress globally
-    if (Agemin.globalIsVerifying) {
+    if (window.__AGEMIN__.verificationPromise) {
       if (this.config.debug) {
-        console.log('Agemin SDK: Verification already in progress globally, ignoring duplicate call');
+        console.log('Agemin SDK: Verification already in progress globally, returning existing promise');
       }
-      return this.config.referenceId;
+      return window.__AGEMIN__.verificationPromise;
     }
-
-    // Mark verification as in progress globally
-    Agemin.globalIsVerifying = true;
-
-    // Store callbacks
-    this.callbacks = {
-      onSuccess: options.onSuccess,
-      onAgePass: options.onAgePass,
-      onAgeFail: options.onAgeFail,
-      onError: options.onError,
-      onCancel: options.onCancel,
-      onClose: options.onClose
-    };
-
-    // Use the referenceId from config
-    const referenceId = this.config.referenceId;
-
-    // Build verification URL
-    const url = this.buildVerificationUrl(referenceId, options);
-
-    // Handle verification based on mode
-    const mode = options.mode || getDefaultMode();
-
-    if (this.config.debug) {
-      console.log('Starting verification', {
-        referenceId,
-        mode,
-        url
-      });
-    }
-
-    try {
-      switch (mode) {
-        case 'redirect':
-          window.location.href = url;
-          break;
-
-        case 'modal':
-        default:
-          // Store modal globally
-          Agemin.globalModal = this.modal;
-          this.modal.openIframe(url, () => this.handleCancel());
-          break;
+    
+    // Check if another instance is already verifying
+    if (window.__AGEMIN__.isVerifying) {
+      if (this.config.debug) {
+        console.log('Agemin SDK: Another instance is verifying, but no promise found. Creating new verification.');
       }
-    } catch (error) {
-      // Reset global state on error
-      Agemin.globalIsVerifying = false;
-      this.handleError({
-        code: 'LAUNCH_ERROR',
-        message: error instanceof Error ? error.message : 'Failed to launch verification'
-      });
     }
 
-    return referenceId;
+    // Create a new promise for this verification
+    const verificationPromise = new Promise<boolean>((resolve, reject) => {
+      // Store the resolve and reject functions globally
+      window.__AGEMIN__.verificationResolve = resolve;
+      window.__AGEMIN__.verificationReject = reject;
+      
+      // Mark verification as in progress globally
+      window.__AGEMIN__.isVerifying = true;
+
+      // Store callbacks
+      this.callbacks = {
+        onSuccess: options.onSuccess,
+        onAgePass: options.onAgePass,
+        onAgeFail: options.onAgeFail,
+        onError: options.onError,
+        onCancel: options.onCancel,
+        onClose: options.onClose
+      };
+
+      // Use the referenceId from this instance's config
+      const referenceId = this.config.referenceId;
+      
+      // Store the referenceId globally so other instances know which one is active
+      window.__AGEMIN__.referenceId = referenceId;
+
+      // Build verification URL
+      const url = this.buildVerificationUrl(referenceId, options);
+
+      // Handle verification based on mode
+      const mode = options.mode || getDefaultMode();
+
+      if (this.config.debug) {
+        console.log('Starting verification', {
+          referenceId,
+          mode,
+          url
+        });
+      }
+
+      try {
+        switch (mode) {
+          case 'redirect':
+            window.location.href = url;
+            // For redirect mode, we can't track completion
+            resolve(false);
+            break;
+
+          case 'modal':
+          default:
+            // Open the modal
+            this.modal.openIframe(url, () => this.handleCancel());
+            // Promise will be resolved in handleSuccess/handleError/handleCancel
+            break;
+        }
+      } catch (error) {
+        // Reset global state on error
+        window.__AGEMIN__.isVerifying = false;
+        window.__AGEMIN__.referenceId = null;
+        window.__AGEMIN__.isInitializing = false;
+        window.__AGEMIN__.verificationResolve = null;
+        window.__AGEMIN__.verificationReject = null;
+        
+        this.handleError({
+          code: 'LAUNCH_ERROR',
+          message: error instanceof Error ? error.message : 'Failed to launch verification'
+        });
+        
+        reject(error);
+      }
+    });
+    
+    // Store the promise globally
+    window.__AGEMIN__.verificationPromise = verificationPromise;
+    
+    return verificationPromise;
+  }
+
+  /**
+   * Start the verification process (legacy method that returns referenceId)
+   */
+  verify(options: VerifyOptions = {}): string {
+    // Start verification asynchronously
+    this.verifyAndWait(options).catch(error => {
+      if (this.config.debug) {
+        console.error('Agemin SDK: Verification failed', error);
+      }
+    });
+    
+    // Return the referenceId for backward compatibility
+    return window.__AGEMIN__.referenceId || this.config.referenceId;
   }
 
   /**
@@ -182,33 +327,62 @@ export class Agemin {
 
   /**
    * Validate existing session and launch verification if needed
-   * @returns true if valid session exists, or referenceId if verification was launched
+   * @returns true if valid session exists, false if verification was launched
    */
-  async validateSession(options?: VerifyOptions): Promise<boolean | string> {
-    // If already validating globally, return existing promise
-    if (Agemin.globalVerificationPromise) {
+  async validateSession(options?: VerifyOptions): Promise<boolean> {
+    // Check if verification is already active (singleton pattern)
+    if (Agemin.isVerificationActive) {
       if (this.config.debug) {
-        console.log('Agemin SDK: Validation already in progress globally, returning existing promise');
+        console.log('Agemin SDK: Verification already active, skipping this request');
       }
-      return Agemin.globalVerificationPromise;
+      // Return existing promise if available
+      if (window.__AGEMIN__.verificationPromise) {
+        return window.__AGEMIN__.verificationPromise;
+      }
+      return false;
     }
-
-    // Create and store the promise globally
-    Agemin.globalVerificationPromise = this.doValidateSession(options);
+    
+    // Check if modal already exists in DOM
+    if (document.getElementById('agemin-iframe')) {
+      if (this.config.debug) {
+        console.log('Agemin SDK: Modal already exists in DOM');
+      }
+      // Return existing promise if available
+      if (window.__AGEMIN__.verificationPromise) {
+        return window.__AGEMIN__.verificationPromise;
+      }
+      return false;
+    }
+    
+    // Mark verification as active
+    Agemin.isVerificationActive = true;
+    
+    if (this.config.debug) {
+      console.log(`Agemin SDK: Starting validation for singleton instance`);
+    }
     
     try {
-      const result = await Agemin.globalVerificationPromise;
+      // Create and store the promise
+      window.__AGEMIN__.verificationPromise = this.doValidateSession(options);
+      const result = await window.__AGEMIN__.verificationPromise;
       return result;
+    } catch (error) {
+      // Reset state on error
+      window.__AGEMIN__.verificationPromise = null;
+      if (this.config.debug) {
+        console.error('Agemin SDK: Validation failed', error);
+      }
+      throw error;
     } finally {
-      // Clear the global promise when done
-      Agemin.globalVerificationPromise = null;
+      // Always clear the active flag when done
+      Agemin.isVerificationActive = false;
     }
   }
 
   /**
    * Internal method that performs the actual validation
    */
-  private async doValidateSession(options?: VerifyOptions): Promise<boolean | string> {
+  private async doValidateSession(options?: VerifyOptions): Promise<boolean> {
     try {
       // Check for existing JWT cookie
       const cookieName = 'agemin_verification';
@@ -223,7 +397,8 @@ export class Agemin {
         if (this.config.debug) {
           console.log('Agemin SDK: No existing JWT, launching verification');
         }
-        return this.verify(options);
+        // Use verifyAndWait to get a promise that resolves when verification completes
+        return this.verifyAndWait(options);
       }
       
       // Validate the JWT
@@ -242,6 +417,7 @@ export class Agemin {
         if (this.config.debug) {
           console.log('Agemin SDK: Valid session exists, user is of age');
         }
+        // Don't clear isInitializing here - let completion handlers do it
         return true;
       }
       
@@ -253,8 +429,8 @@ export class Agemin {
       // Delete the invalid/expired cookie
       deleteCookie(cookieName);
       
-      // Launch verification
-      return this.verify(options);
+      // Launch verification and wait for completion
+      return this.verifyAndWait(options);
       
     } catch (error) {
       if (this.config.debug) {
@@ -262,7 +438,7 @@ export class Agemin {
       }
       
       // On any error, launch verification as fallback
-      return this.verify(options);
+      return this.verifyAndWait(options);
     }
   }
 
@@ -278,6 +454,97 @@ export class Agemin {
    */
   static isSupported(): boolean {
     return isSupported();
+  }
+  
+  /**
+   * Check if verification is currently active
+   */
+  static isVerificationInProgress(): boolean {
+    if (typeof window !== 'undefined' && window.__AGEMIN__) {
+      return window.__AGEMIN__.isVerifying || !!window.__AGEMIN__.verificationPromise;
+    }
+    return false;
+  }
+  
+  /**
+   * Get the active verification promise if one exists
+   */
+  static getActiveVerificationPromise(): Promise<boolean> | null {
+    if (typeof window !== 'undefined' && window.__AGEMIN__) {
+      return window.__AGEMIN__.verificationPromise;
+    }
+    return null;
+  }
+  
+  /**
+   * Get the instance for a specific assetId (create if needed)
+   */
+  static getInstance(config?: AgeminConfig): Agemin {
+    if (!config?.assetId) {
+      throw new Error('Agemin SDK: assetId is required in config.');
+    }
+    
+    // Check window storage for existing instance with this assetId
+    if (typeof window !== 'undefined' && window.__AGEMIN__?.instances[config.assetId]) {
+      return window.__AGEMIN__.instances[config.assetId];
+    }
+    
+    // Create new instance (constructor will store it on window)
+    return new Agemin(config);
+  }
+  
+  /**
+   * Reset instances (useful for testing)
+   * @param assetId - Optional: reset only a specific assetId's instance. If not provided, resets all.
+   */
+  static reset(assetId?: string): void {
+    if (typeof window !== 'undefined' && window.__AGEMIN__) {
+      if (assetId) {
+        // Reset specific instance
+        const instance = window.__AGEMIN__.instances[assetId];
+        if (instance) {
+          // Close any open modal
+          if (instance.modal) {
+            instance.modal.close();
+          }
+          delete window.__AGEMIN__.instances[assetId];
+        }
+        delete window.__AGEMIN__.instanceCreationInProgress[assetId];
+      } else {
+        // Reset all instances
+        for (const id in window.__AGEMIN__.instances) {
+          const instance = window.__AGEMIN__.instances[id];
+          if (instance?.modal) {
+            instance.modal.close();
+          }
+        }
+        window.__AGEMIN__.instances = {};
+        window.__AGEMIN__.instanceCreationInProgress = {};
+      }
+    }
+    
+    Agemin.isVerificationActive = false;
+    
+    // Clear global state
+    if (typeof window !== 'undefined' && window.__AGEMIN__) {
+      window.__AGEMIN__.isInitializing = false;
+      window.__AGEMIN__.isVerifying = false;
+      window.__AGEMIN__.referenceId = null;
+      window.__AGEMIN__.verificationPromise = null;
+      window.__AGEMIN__.verificationResolve = null;
+      window.__AGEMIN__.verificationReject = null;
+      window.__AGEMIN__.validationQueue = Promise.resolve();
+    }
+    
+    // Remove any lingering modal from DOM
+    const existingModal = document.getElementById('agemin-modal');
+    if (existingModal) {
+      existingModal.remove();
+    }
+    const existingIframe = document.getElementById('agemin-iframe');
+    if (existingIframe && existingIframe.parentElement) {
+      existingIframe.parentElement.remove();
+    }
   }
 
   private setupMessageListener(): void {
@@ -402,10 +669,6 @@ export class Agemin {
   }
 
   private async handleSuccess(data: any): Promise<void> {
-    // Reset global verification state
-    Agemin.globalIsVerifying = false;
-    Agemin.globalModal = null;
-    
     if (this.config.debug) {
       console.log('Agemin SDK: Verification process completed', data);
     }
@@ -520,13 +783,26 @@ export class Agemin {
     } else if (isOfAge === false && this.config.errorUrl) {
       window.location.href = this.config.errorUrl;
     }
+    
+    // Resolve the promise (true if age verified and of age, false otherwise)
+    const verificationPassed = isOfAge === true;
+    if (window.__AGEMIN__.verificationResolve) {
+      window.__AGEMIN__.verificationResolve(verificationPassed);
+    }
+    
+    // Reset global verification state
+    window.__AGEMIN__.isVerifying = false;
+    window.__AGEMIN__.verificationPromise = null;
+    window.__AGEMIN__.referenceId = null;
+    window.__AGEMIN__.isInitializing = false;
+    window.__AGEMIN__.verificationResolve = null;
+    window.__AGEMIN__.verificationReject = null;
+    
+    // Clear singleton verification flag
+    Agemin.isVerificationActive = false;
   }
 
   private handleError(error: VerificationError): void {
-    // Reset global verification state
-    Agemin.globalIsVerifying = false;
-    Agemin.globalModal = null;
-    
     if (this.config.debug) {
       console.error('Agemin SDK: Technical error occurred - consider showing fallback age confirmation', error);
     }
@@ -540,13 +816,25 @@ export class Agemin {
     if (this.config.errorUrl) {
       window.location.href = this.config.errorUrl;
     }
+    
+    // Reject the promise
+    if (window.__AGEMIN__.verificationReject) {
+      window.__AGEMIN__.verificationReject(error);
+    }
+    
+    // Reset global verification state
+    window.__AGEMIN__.isVerifying = false;
+    window.__AGEMIN__.verificationPromise = null;
+    window.__AGEMIN__.referenceId = null;
+    window.__AGEMIN__.isInitializing = false;
+    window.__AGEMIN__.verificationResolve = null;
+    window.__AGEMIN__.verificationReject = null;
+    
+    // Clear singleton verification flag
+    Agemin.isVerificationActive = false;
   }
 
   private handleCancel(): void {
-    // Reset global verification state
-    Agemin.globalIsVerifying = false;
-    Agemin.globalModal = null;
-    
     if (this.config.debug) {
       console.log('Agemin SDK: Verification cancelled');
     }
@@ -564,6 +852,22 @@ export class Agemin {
     if (this.config.cancelUrl) {
       window.location.href = this.config.cancelUrl;
     }
+    
+    // Reject the promise with cancellation
+    if (window.__AGEMIN__.verificationReject) {
+      window.__AGEMIN__.verificationReject(new Error('Verification cancelled by user'));
+    }
+    
+    // Reset global verification state
+    window.__AGEMIN__.isVerifying = false;
+    window.__AGEMIN__.verificationPromise = null;
+    window.__AGEMIN__.referenceId = null;
+    window.__AGEMIN__.isInitializing = false;
+    window.__AGEMIN__.verificationResolve = null;
+    window.__AGEMIN__.verificationReject = null;
+    
+    // Clear singleton verification flag
+    Agemin.isVerificationActive = false;
   }
 
   private handleReady(): void {

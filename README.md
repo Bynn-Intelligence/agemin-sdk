@@ -22,6 +22,7 @@ A secure, type-safe JavaScript/TypeScript SDK for integrating Agemin age verific
 - 📦 **Lightweight** - Zero runtime dependencies
 - 💪 **TypeScript** - Full TypeScript support with comprehensive type definitions
 - 🎯 **Flexible** - Multiple verification modes (modal, popup, redirect)
+- ⚛️ **React Compatible** - Singleton pattern prevents duplicate modals in StrictMode (v5.0+)
 
 ## Getting Started
 
@@ -65,6 +66,26 @@ pnpm add @bynn-intelligence/agemin-sdk
 <script src="https://unpkg.com/@bynn-intelligence/agemin-sdk/dist/agemin-sdk.min.js"></script>
 ```
 
+## ⚠️ Breaking Change in v5.0.0
+
+**Version 5.0.0 introduces a singleton pattern** to prevent multiple verification modals in React StrictMode and other scenarios. Only one Agemin instance can exist at a time.
+
+### Migration from v4.x to v5.x
+
+```javascript
+// OLD (v4.x) - Multiple instances allowed
+const agemin1 = new Agemin(config1); // Creates instance 1
+const agemin2 = new Agemin(config2); // Creates instance 2 (different instance)
+
+// NEW (v5.x) - Singleton pattern
+const agemin1 = new Agemin(config1); // Creates first instance
+const agemin2 = new Agemin(config2); // Returns the SAME instance as agemin1
+
+// To create a new instance with different config, use reset()
+Agemin.reset(); // Clear the singleton
+const agemin3 = new Agemin(config3); // Now creates a new instance
+```
+
 ## Quick Start
 
 ### Frontend Implementation
@@ -77,12 +98,18 @@ const response = await fetch('/api/agemin/reference', { method: 'POST' });
 const { referenceId } = await response.json();
 
 // 2. Initialize SDK with Asset ID and Reference ID
+// Note: In v5.x, only the first call creates an instance
 const agemin = new Agemin({
   assetId: 'ast_5b08b274353b92f4',    // Your Asset ID from agemin.com/app/websites
   referenceId: referenceId,           // Unique reference ID from your backend (max 50 bytes)
   metadata: { userId: 123 },          // Optional metadata (max 256 bytes when stringified)
   debug: true
 });
+
+// Alternative: Use getInstance() to get existing instance
+const agemin = Agemin.getInstance(); // Get existing instance
+// or create if doesn't exist:
+const agemin = Agemin.getInstance(config);
 
 // 3. Optional: Register event listeners for real-time updates
 agemin.onAppReady(() => {
@@ -184,6 +211,56 @@ The `validateSession` method will:
   - No verification cookie exists
   - The JWT is expired or invalid
   - The user previously failed age verification
+
+### React Integration (v5.0+ Singleton Pattern)
+
+The SDK v5.0+ uses a singleton pattern to prevent duplicate modals in React StrictMode:
+
+```javascript
+import { useEffect, useRef } from 'react';
+import Agemin from '@bynn-intelligence/agemin-sdk';
+
+function AgeGate({ children }) {
+  const initialized = useRef(false);
+  
+  useEffect(() => {
+    // React StrictMode will call this twice, but SDK handles it
+    if (initialized.current) return;
+    initialized.current = true;
+    
+    // Create Agemin instance (singleton - only first call creates instance)
+    const agemin = new Agemin({
+      assetId: 'ast_A6ctvqk5egQtCoZhr5LrWkRm',
+      referenceId: generateUniqueId(),
+      debug: true
+    });
+    
+    // Validate session
+    agemin.validateSession({
+      onAgePass: () => {
+        console.log('User is verified');
+      },
+      onAgeFail: () => {
+        window.location.href = '/age-restricted';
+      }
+    });
+    
+    // Cleanup (optional - for testing)
+    return () => {
+      // Only reset if you need to create a new instance
+      // Agemin.reset();
+    };
+  }, []);
+  
+  return children;
+}
+```
+
+**Key Points for React:**
+- The SDK automatically handles multiple `new Agemin()` calls by returning the same instance
+- Only one verification modal will ever be shown, even in StrictMode
+- Use `Agemin.reset()` only when you need to create a completely new instance
+- The singleton pattern prevents race conditions and duplicate modals
 
 ### Backend Implementation (Node.js Example)
 
