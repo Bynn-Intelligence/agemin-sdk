@@ -66,25 +66,6 @@ pnpm add @bynn-intelligence/agemin-sdk
 <script src="https://unpkg.com/@bynn-intelligence/agemin-sdk/dist/agemin-sdk.min.js"></script>
 ```
 
-## ⚠️ Breaking Change in v5.0.0
-
-**Version 5.0.0 introduces a singleton pattern** to prevent multiple verification modals in React StrictMode and other scenarios. Only one Agemin instance can exist at a time.
-
-### Migration from v4.x to v5.x
-
-```javascript
-// OLD (v4.x) - Multiple instances allowed
-const agemin1 = new Agemin(config1); // Creates instance 1
-const agemin2 = new Agemin(config2); // Creates instance 2 (different instance)
-
-// NEW (v5.x) - Singleton pattern
-const agemin1 = new Agemin(config1); // Creates first instance
-const agemin2 = new Agemin(config2); // Returns the SAME instance as agemin1
-
-// To create a new instance with different config, use reset()
-Agemin.reset(); // Clear the singleton
-const agemin3 = new Agemin(config3); // Now creates a new instance
-```
 
 ## Quick Start
 
@@ -262,7 +243,7 @@ function AgeGate({ children }) {
 - Use `Agemin.reset()` only when you need to create a completely new instance
 - The singleton pattern prevents race conditions and duplicate modals
 
-### Backend Implementation (Node.js Example)
+### Backend Implementation (Node.js Example) (optional but more secure)
 
 ```javascript
 // Generate reference endpoint
