@@ -321,7 +321,6 @@ const agemin = new Agemin({
   
   // Optional
   metadata?: Record<string, any>;  // Custom metadata (max 256 bytes when stringified)
-  baseUrl?: string;           // Custom verification URL (default: 'https://verify.agemin.com')
   theme?: 'light' | 'dark' | 'auto';  // UI theme (default: 'auto')
   locale?: string;            // Language locale (default: 'en')
   errorUrl?: string;          // URL to redirect on error
