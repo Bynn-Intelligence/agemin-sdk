@@ -21,6 +21,7 @@ if (typeof document !== 'undefined') {
         errorUrl: script.getAttribute('data-agemin-error-url') || undefined,
         successUrl: script.getAttribute('data-agemin-success-url') || undefined,
         cancelUrl: script.getAttribute('data-agemin-cancel-url') || undefined,
+        mode: script.getAttribute('data-agemin-mode') as any || undefined,
         theme: script.getAttribute('data-agemin-theme') as any || undefined,
         locale: script.getAttribute('data-agemin-locale') || undefined,
         debug: script.getAttribute('data-agemin-debug') === 'true'

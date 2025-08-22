@@ -51,6 +51,13 @@ export interface AgeminConfig {
   cancelUrl?: string | null;
   
   /**
+   * Default verification mode for this instance
+   * Can be overridden per verification
+   * @default 'modal'
+   */
+  mode?: VerificationMode;
+  
+  /**
    * Theme for the verification interface
    * @default 'auto'
    */

@@ -2,6 +2,7 @@ export const SDK_VERSION = '__VERSION__';
 
 export const DEFAULT_CONFIG = {
   baseUrl: 'https://verify.agemin.com',
+  mode: 'modal' as const,
   theme: 'auto' as const,
   locale: 'auto',
   debug: false,

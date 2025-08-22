@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.8.0] - 2025-08-22
+
+### Added
+- `mode` configuration option to set default verification mode (modal or redirect) at instance level
+- Support for `data-agemin-mode` attribute in auto-initialization
+- Default mode explicitly set to 'modal' in DEFAULT_CONFIG
+
+### Fixed
+- Singleton pattern now properly updates `mode` when returning existing instance
+- Redirect mode now works correctly in test integration
+
+### Changed
+- Mode can be configured at instance level and overridden per verification
+- Test integration properly respects configured mode without custom logic
+
 ## [3.1.0] - 2024-01-08
 
 ### Added

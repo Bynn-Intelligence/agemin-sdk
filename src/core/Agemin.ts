@@ -85,6 +85,11 @@ export class Agemin {
       const instance = window.__AGEMIN__.instances[config.assetId];
       instance.config.referenceId = config.referenceId;
       
+      // Also update mode if provided
+      if (config.mode !== undefined) {
+        instance.config.mode = config.mode;
+      }
+      
       // Also update metadata if provided
       if (config.metadata !== undefined) {
         instance.config.metadata = config.metadata;
@@ -105,6 +110,9 @@ export class Agemin {
         if (instance) {
           // Update config on the instance that was created
           instance.config.referenceId = config.referenceId;
+          if (config.mode !== undefined) {
+            instance.config.mode = config.mode;
+          }
           if (config.metadata !== undefined) {
             instance.config.metadata = config.metadata;
           }
@@ -252,8 +260,8 @@ export class Agemin {
       // Build verification URL with fingerprint
       const url = this.buildVerificationUrl(referenceId, options, fingerprint);
 
-      // Handle verification based on mode
-      const mode = options.mode || getDefaultMode();
+      // Handle verification based on mode (priority: options > config > default)
+      const mode = options.mode || this.config.mode || getDefaultMode();
 
       if (this.config.debug) {
         console.log('Starting verification', {
